@@ -1,4 +1,4 @@
-package com.qifun.sbtHaxeToJava
+package com.qifun.sbtHaxe
 
 import sbt.Plugin
 import sbt.Keys._
@@ -6,22 +6,22 @@ import sbt._
 import java.io.File
 import scala.Some
 
-final object HaxeToJavaPlugin extends Plugin {
+final object HaxePlugin extends Plugin {
 	final val haxeCommand = SettingKey[String]("haxe-command", "haxe executable")
 	final val haxe = TaskKey[Seq[File]]("haxe", "Convert haxe source code to java.")
 	final val unmanagedInclude = SettingKey[File]("unmanaged-include", "The default directory for manually managed included haxe.")
-	final val HaxeToJava = config("haxe")
-	final val TestHaxeToJava = config("test-haxe")
+	final val Haxe = config("haxe")
+	final val TestHaxe = config("test-haxe")
 	
 	override final def globalSettings =
 	  super.globalSettings :+ (haxeCommand := "haxe")
 	
-	final def haxeToJavaSetting(
-	    haxeToJavaConfiguration: Configuration,
+	final def haxeSetting(
+	    haxeConfiguration: Configuration,
 	    injectConfiguration: Configuration) = {
 	  haxe in injectConfiguration := {
-	    val includes = (dependencyClasspath in haxeToJavaConfiguration).value
-	    val cache = (cacheDirectory in haxeToJavaConfiguration).value
+	    val includes = (dependencyClasspath in haxeConfiguration).value
+	    val cache = (cacheDirectory in haxeConfiguration).value
 	    val cachedTranfer = FileFunction.cached(cache / "haxe", inStyle = FilesInfo.lastModified, outStyle = FilesInfo.exists) { (in: Set[File]) =>
 	      IO.withTemporaryDirectory { temporaryDirectory =>
 	        val processBuilder =
@@ -36,9 +36,9 @@ final object HaxeToJavaPlugin extends Plugin {
 	                  case _ => ""
 	                }
 	              }
-	        (streams in haxeToJavaConfiguration).value.log.info(processBuilder.mkString("\"", "\" \"", "\""))
-	        (streams in haxeToJavaConfiguration).value.log.info("test: " + update)
-	        processBuilder !< (streams in haxeToJavaConfiguration).value.log match {
+	        (streams in haxeConfiguration).value.log.info(processBuilder.mkString("\"", "\" \"", "\""))
+	        (streams in haxeConfiguration).value.log.info("test: " + update)
+	        processBuilder !< (streams in haxeConfiguration).value.log match {
 	          case 0 => {
 	            val moveMapping = (temporaryDirectory ** globFilter("*.java")) x {
 	              _.relativeTo(temporaryDirectory).map {
@@ -54,11 +54,11 @@ final object HaxeToJavaPlugin extends Plugin {
 	        }
 	      }
 	    }
-	    cachedTranfer((sources in haxeToJavaConfiguration).value.toSet).toSeq
+	    cachedTranfer((sources in haxeConfiguration).value.toSet).toSeq
 	  }
 	}
 
-  final val baseHaxeToJavaSettings =
+  final val baseHaxeSettings =
     Defaults.configTasks ++
       Defaults.configPaths ++
       Classpaths.configSettings ++
@@ -81,15 +81,15 @@ final object HaxeToJavaPlugin extends Plugin {
             unmanagedSourceDirectories <<= sourceDirectory { Seq(_) },
             includeFilter in unmanagedSources := "*.hx")
 	 
-	final val haxeToJavaSettings = 
-	  sbt.addArtifact(artifact in packageBin in HaxeToJava, packageBin in HaxeToJava) ++
-	  	inConfig(HaxeToJava)(baseHaxeToJavaSettings) ++
-	  	inConfig(TestHaxeToJava)(baseHaxeToJavaSettings) ++
+	final val haxeSettings = 
+	  sbt.addArtifact(artifact in packageBin in Haxe, packageBin in Haxe) ++
+	  	inConfig(Haxe)(baseHaxeSettings) ++
+	  	inConfig(TestHaxe)(baseHaxeSettings) ++
 	  	Seq(
-	  	    ivyConfigurations += HaxeToJava,
-	  	    haxeToJavaSetting(HaxeToJava, Compile),
+	  	    ivyConfigurations += Haxe,
+	  	    haxeSetting(Haxe, Compile),
 	  	    sourceGenerators in Compile <+= haxe in Compile,
-	  	    ivyConfigurations += TestHaxeToJava,
-	  	    haxeToJavaSetting(TestHaxeToJava, Test),
+	  	    ivyConfigurations += TestHaxe,
+	  	    haxeSetting(TestHaxe, Test),
 	  	    sourceGenerators in Test <+= haxe in Test)
 }
