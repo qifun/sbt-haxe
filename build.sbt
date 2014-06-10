@@ -2,7 +2,7 @@ crossBuildingSettings
 
 sbtPlugin := true
 
-name := "sbt-haxe-to-java"
+name := "sbt-haxe"
 
 organization := "com.qifun"
 
