@@ -41,8 +41,8 @@ final object HaxePlugin extends Plugin {
                   } yield relativePath
                   relativePaths match {
                     case Seq(relativePath) => relativePath.toString.substring(0, relativePath.toString.lastIndexOf(".")).replace(System.getProperty("file.separator"), ".")
-                    case Seq() => throw new MessageOnlyException("$file should be in one of source directories!")
-                    case _ => throw new MessageOnlyException("$file should not be in multiple source directories!")
+                    case Seq() => throw new MessageOnlyException(raw"$file should be in one of source directories!")
+                    case _ => throw new MessageOnlyException(raw"$file should not be in multiple source directories!")
                   }
                 }
           (streams in haxeConfiguration).value.log.info(processBuilder.mkString("\"", "\" \"", "\""))
