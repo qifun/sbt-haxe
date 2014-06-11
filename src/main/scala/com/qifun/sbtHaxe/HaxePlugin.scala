@@ -7,40 +7,41 @@ import java.io.File
 import scala.Some
 
 final object HaxePlugin extends Plugin {
-  final val haxeCommand = SettingKey[String]("haxe-command", "haxe executable")
-  final val haxe = TaskKey[Seq[File]]("haxe", "Convert haxe source code to java.")
+  final val haxeOptions = SettingKey[Seq[String]]("haxe-options", "Additional command-line options for Haxe compiler.")
+  final val haxeCommand = SettingKey[String]("haxe-command", "The Haxe executable.")
+  final val haxe = TaskKey[Seq[File]]("haxe", "Convert Haxe source code to Java.")
+  final val unmanagedInclude = SettingKey[File]("unmanaged-include", "The default directory for manually managed included haxe.")
   final val Haxe = config("haxe")
   final val TestHaxe = config("test-haxe")
-
+  
   override final def globalSettings =
-    super.globalSettings :+ (haxeCommand := "haxe")
-
+    super.globalSettings ++ Seq(
+      haxeCommand := "haxe",
+      haxeOptions := Seq())
+  
   final def haxeSetting(
     haxeConfiguration: Configuration,
     injectConfiguration: Configuration) = {
     haxe in injectConfiguration := {
       val includes = (dependencyClasspath in haxeConfiguration).value
       val cache = (cacheDirectory in haxeConfiguration).value
-      val projectRef = (thisProjectRef in haxeConfiguration).value
-      val deps = (buildDependencies in haxeConfiguration).value
-      val data = (settingsData in haxeConfiguration).value
-
       val cachedTranfer = FileFunction.cached(cache / "haxe", inStyle = FilesInfo.lastModified, outStyle = FilesInfo.exists) { (in: Set[File]) =>
         IO.withTemporaryDirectory { temporaryDirectory =>
           val processBuilder =
             Seq(
-              (haxeCommand in injectConfiguration).value,
-              "-cp", (sourceDirectory.value / "haxe").getPath,
-              "-java", temporaryDirectory.getPath,
-              "-D", "no-compilation") ++
-              in.map { file =>
-                (file.relativeTo(sourceDirectory.value / "haxe")) match {
-                  case Some(relativePath: File) => relativePath.toString.substring(0, relativePath.toString.lastIndexOf(".")).replace(System.getProperty("file.separator"), ".")
-                  case _ => ""
+                (haxeCommand in injectConfiguration).value,
+                "-cp", (sourceDirectory.value / "haxe").getPath,
+                "-java", temporaryDirectory.getPath,
+                "-D", "no-compilation") ++
+                (haxeOptions in haxeConfiguration).value ++
+                in.map { file => 
+                  (file.relativeTo(sourceDirectory.value / "haxe")) match {
+                    case Some(relativePath:File) => relativePath.toString.substring(0, relativePath.toString.lastIndexOf(".")).replace(System.getProperty("file.separator"), ".")
+                    case _ => ""
+                  }
                 }
-              }
-
           (streams in haxeConfiguration).value.log.info(processBuilder.mkString("\"", "\" \"", "\""))
+          (streams in haxeConfiguration).value.log.info("test: " + update)
           processBuilder !< (streams in haxeConfiguration).value.log match {
             case 0 => {
               val moveMapping = (temporaryDirectory ** globFilter("*.java")) x {
@@ -77,14 +78,20 @@ final object HaxePlugin extends Plugin {
             } yield f -> r.getPath
           })) ++
         Seq(
-          exportedProducts <<=
-            (products.task, packageBin.task, exportJars, compile) flatMap { (psTask, pkgTask, useJars, analysis) =>
-              (if (useJars) Seq(pkgTask).join else psTask) map { _ map { f => Classpaths.analyzed(f, analysis) } }
-            },
-          unmanagedSourceDirectories <<= sourceDirectory { Seq(_) },
+          exportedProducts := {
+            val files = if (exportJars.value) {
+              Seq(packageBin.value)
+            } else {
+              products.value
+            }
+            for (f <- files) yield {
+              Classpaths.analyzed(f, compile.value)
+            }
+          },
+          unmanagedSourceDirectories := Seq(sourceDirectory.value),
           includeFilter in unmanagedSources := "*.hx")
-
-  final val haxeSettings =
+   
+  final val haxeSettings = 
     sbt.addArtifact(artifact in packageBin in Haxe, packageBin in Haxe) ++
       inConfig(Haxe)(baseHaxeSettings) ++
       inConfig(TestHaxe)(baseHaxeSettings) ++
@@ -96,3 +103,4 @@ final object HaxePlugin extends Plugin {
         haxeSetting(TestHaxe, Test),
         sourceGenerators in Test <+= haxe in Test)
 }
+// vim: et sts=2 sw=2
