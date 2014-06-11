@@ -10,7 +10,6 @@ final object HaxePlugin extends Plugin {
   final val haxeOptions = SettingKey[Seq[String]]("haxe-options", "Additional command-line options for Haxe compiler.")
   final val haxeCommand = SettingKey[String]("haxe-command", "The Haxe executable.")
   final val haxe = TaskKey[Seq[File]]("haxe", "Convert Haxe source code to Java.")
-  final val unmanagedInclude = SettingKey[File]("unmanaged-include", "The default directory for manually managed included haxe.")
   final val Haxe = config("haxe")
   final val TestHaxe = config("test-haxe")
 
@@ -28,10 +27,10 @@ final object HaxePlugin extends Plugin {
       val cachedTranfer = FileFunction.cached(cache / "haxe", inStyle = FilesInfo.lastModified, outStyle = FilesInfo.exists) { (in: Set[File]) =>
         IO.withTemporaryDirectory { temporaryDirectory =>
           val deps = (buildDependencies in haxeConfiguration).value.classpath((thisProjectRef in haxeConfiguration).value)
-          (streams in haxeConfiguration).value.log.info("!!!!!!!test1:" + deps)
-          
+
+          // Parse the sub project path.
           val dependSources = for {
-            ResolvedClasspathDependency(dep:ProjectRef, _) <- deps
+            ResolvedClasspathDependency(dep: ProjectRef, _) <- deps
           } yield {
             dep match {
               case ProjectRef(path, subProject) => (path.getPath().substring(1) + subProject + "/src/haxe").replace("/", System.getProperty("file.separator"))
@@ -39,17 +38,26 @@ final object HaxePlugin extends Plugin {
             }
           }
 
+          // Parse the path of library dependencies(.jar)
+          val jarPathes = (managedClasspath in Compile).value map {
+            jarPath =>
+              jarPath.data.toString
+          }
+          (streams in haxeConfiguration).value.log.debug("dependency path: " + jarPathes)
+
           val processBuilder =
             Seq[String](
-                (haxeCommand in injectConfiguration).value,
-                "-cp", (sourceDirectory in haxeConfiguration).value.getPath,
-                "-java", temporaryDirectory.getPath,
+              (haxeCommand in injectConfiguration).value,
+              "-cp", (sourceDirectory in haxeConfiguration).value.getPath) ++
+              (Seq[String]() /: dependSources)(_ ++ Seq("-cp", _)) ++
+              (Seq[String]() /: jarPathes)(_ ++ Seq("-java-lib", _)) ++
+              Seq("-java", temporaryDirectory.getPath,
                 "-D", "no-compilation") ++
                 (haxeOptions in haxeConfiguration).value ++
                 in.map { file =>
                   val relativePaths = for {
                     parent <- (sourceDirectories in haxeConfiguration).value
-                    relativePath <- file.relativeTo(parent) 
+                    relativePath <- file.relativeTo(parent)
                   } yield relativePath
                   relativePaths match {
                     case Seq(relativePath) => relativePath.toString.substring(0, relativePath.toString.lastIndexOf(".")).replace(System.getProperty("file.separator"), ".")
