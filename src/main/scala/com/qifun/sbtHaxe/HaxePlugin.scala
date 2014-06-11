@@ -56,8 +56,9 @@ final object HaxePlugin extends Plugin {
           (streams in haxeConfiguration).value.log.info(processBuilder.mkString("\"", "\" \"", "\""))
           processBuilder !< (streams in haxeConfiguration).value.log match {
             case 0 => {
+              var temporarySrc = temporaryDirectory / "src"
               val moveMapping = (temporaryDirectory ** globFilter("*.java")) x {
-                _.relativeTo(temporaryDirectory).map {
+                _.relativeTo(temporarySrc).map {
                   (sourceManaged in injectConfiguration).value / _.getPath
                 }
               }
