@@ -40,20 +40,23 @@ final object HaxePlugin extends Plugin {
           }
 
           val processBuilder =
-            Seq(
-              (haxeCommand in injectConfiguration).value,
-              "-cp", (sourceDirectory.value / "haxe").getPath) ++ 
-              dependSources ++
-              Seq(
-              "-java", temporaryDirectory.getPath,
-              "-D", "no-compilation") ++
-              (haxeOptions in haxeConfiguration).value ++
-              in.map { file =>
-                (file.relativeTo(sourceDirectory.value / "haxe")) match {
-                  case Some(relativePath: File) => relativePath.toString.substring(0, relativePath.toString.lastIndexOf(".")).replace(System.getProperty("file.separator"), ".")
-                  case _ => ""
+            Seq[String](
+                (haxeCommand in injectConfiguration).value,
+                "-cp", (sourceDirectory in haxeConfiguration).value.getPath,
+                "-java", temporaryDirectory.getPath,
+                "-D", "no-compilation") ++
+                (haxeOptions in haxeConfiguration).value ++
+                in.map { file =>
+                  val relativePaths = for {
+                    parent <- (sourceDirectories in haxeConfiguration).value
+                    relativePath <- file.relativeTo(parent) 
+                  } yield relativePath
+                  relativePaths match {
+                    case Seq(relativePath) => relativePath.toString.substring(0, relativePath.toString.lastIndexOf(".")).replace(System.getProperty("file.separator"), ".")
+                    case Seq() => throw new MessageOnlyException("$file should be in one of source directories!")
+                    case _ => throw new MessageOnlyException("$file should not be in multiple source directories!")
+                  }
                 }
-              }
           (streams in haxeConfiguration).value.log.info(processBuilder.mkString("\"", "\" \"", "\""))
           processBuilder !< (streams in haxeConfiguration).value.log match {
             case 0 => {
