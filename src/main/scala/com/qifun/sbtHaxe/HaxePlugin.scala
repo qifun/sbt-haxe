@@ -13,12 +13,12 @@ final object HaxePlugin extends Plugin {
   final val unmanagedInclude = SettingKey[File]("unmanaged-include", "The default directory for manually managed included haxe.")
   final val Haxe = config("haxe")
   final val TestHaxe = config("test-haxe")
-  
+
   override final def globalSettings =
     super.globalSettings ++ Seq(
       haxeCommand := "haxe",
       haxeOptions := Seq())
-  
+
   final def haxeSetting(
     haxeConfiguration: Configuration,
     injectConfiguration: Configuration) = {
@@ -27,21 +27,34 @@ final object HaxePlugin extends Plugin {
       val cache = (cacheDirectory in haxeConfiguration).value
       val cachedTranfer = FileFunction.cached(cache / "haxe", inStyle = FilesInfo.lastModified, outStyle = FilesInfo.exists) { (in: Set[File]) =>
         IO.withTemporaryDirectory { temporaryDirectory =>
+          val deps = (buildDependencies in haxeConfiguration).value.classpath((thisProjectRef in haxeConfiguration).value)
+          (streams in haxeConfiguration).value.log.info("!!!!!!!test1:" + deps)
+          
+          val dependSources = for {
+            ResolvedClasspathDependency(dep:ProjectRef, _) <- deps
+          } yield {
+            dep match {
+              case ProjectRef(path, subProject) => (path.getPath().substring(1) + subProject + "/src/haxe").replace("/", System.getProperty("file.separator"))
+              case _ => ""
+            }
+          }
+
           val processBuilder =
             Seq(
-                (haxeCommand in injectConfiguration).value,
-                "-cp", (sourceDirectory.value / "haxe").getPath,
-                "-java", temporaryDirectory.getPath,
-                "-D", "no-compilation") ++
-                (haxeOptions in haxeConfiguration).value ++
-                in.map { file => 
-                  (file.relativeTo(sourceDirectory.value / "haxe")) match {
-                    case Some(relativePath:File) => relativePath.toString.substring(0, relativePath.toString.lastIndexOf(".")).replace(System.getProperty("file.separator"), ".")
-                    case _ => ""
-                  }
+              (haxeCommand in injectConfiguration).value,
+              "-cp", (sourceDirectory.value / "haxe").getPath) ++ 
+              dependSources ++
+              Seq(
+              "-java", temporaryDirectory.getPath,
+              "-D", "no-compilation") ++
+              (haxeOptions in haxeConfiguration).value ++
+              in.map { file =>
+                (file.relativeTo(sourceDirectory.value / "haxe")) match {
+                  case Some(relativePath: File) => relativePath.toString.substring(0, relativePath.toString.lastIndexOf(".")).replace(System.getProperty("file.separator"), ".")
+                  case _ => ""
                 }
+              }
           (streams in haxeConfiguration).value.log.info(processBuilder.mkString("\"", "\" \"", "\""))
-          (streams in haxeConfiguration).value.log.info("test: " + update)
           processBuilder !< (streams in haxeConfiguration).value.log match {
             case 0 => {
               val moveMapping = (temporaryDirectory ** globFilter("*.java")) x {
@@ -90,8 +103,8 @@ final object HaxePlugin extends Plugin {
           },
           unmanagedSourceDirectories := Seq(sourceDirectory.value),
           includeFilter in unmanagedSources := "*.hx")
-   
-  final val haxeSettings = 
+
+  final val haxeSettings =
     sbt.addArtifact(artifact in packageBin in Haxe, packageBin in Haxe) ++
       inConfig(Haxe)(baseHaxeSettings) ++
       inConfig(TestHaxe)(baseHaxeSettings) ++
