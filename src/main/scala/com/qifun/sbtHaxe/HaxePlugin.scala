@@ -18,6 +18,20 @@ final object HaxePlugin extends Plugin {
       haxeCommand := "haxe",
       haxeOptions := Seq())
 
+  /**
+   *  默认的[[haxe]]任务设置值。
+   *  
+   *  当编译Haxe时，某些所需的[[sbt.SettingKey]]是Sbt内置设置。
+   *  所以这些[[sbt.SettingKey]]会使用`haxeConfiguration`参数传入[[Haxe]]或[[TestHaxe]]作为[[sbt.Configuration]]以便区分。
+   *  例如`sourceDirectory`、`dependencyClasspath`等。
+   *  
+   *  另一些[[sbt.SettingKey]]是[[HaxePlugin]]插件专用设置，不会与内置设置同名。
+   *  所以这些设置不用自定义的[[sbt.Configuration]]就可以区分，而用`injectConfiguration`参数传入[[Compile]]或[[Test]]作为[[sbt.Configuration]]。
+   *  例如`haxeCommand`、`haxeOptions`等。
+   *  
+   *  @param haxeConfiguration 当把Sbt内置[[sbt.SettingKey]]重用于Haxe编译时所需的[[sbt.Configuration]]。
+   *  @param injectConfiguration [[HaxePlugin]]插件专有[[sbt.SettingKey]]所用的Sbt内置[[sbt.Configuration]]。
+   */ 
   final def haxeSetting(
     haxeConfiguration: Configuration,
     injectConfiguration: Configuration) = {
@@ -53,7 +67,7 @@ final object HaxePlugin extends Plugin {
               (Seq[String]() /: jarPathes)(_ ++ Seq("-java-lib", _)) ++
               Seq("-java", temporaryDirectory.getPath,
                 "-D", "no-compilation") ++
-                (haxeOptions in haxeConfiguration).value ++
+                (haxeOptions in injectConfiguration).value ++
                 in.map { file =>
                   val relativePaths = for {
                     parent <- (sourceDirectories in haxeConfiguration).value
@@ -61,8 +75,8 @@ final object HaxePlugin extends Plugin {
                   } yield relativePath
                   relativePaths match {
                     case Seq(relativePath) => relativePath.toString.substring(0, relativePath.toString.lastIndexOf(".")).replace(System.getProperty("file.separator"), ".")
-                    case Seq() => throw new MessageOnlyException("$file should be in one of source directories!")
-                    case _ => throw new MessageOnlyException("$file should not be in multiple source directories!")
+                    case Seq() => throw new MessageOnlyException(raw"$file should be in one of source directories!")
+                    case _ => throw new MessageOnlyException(raw"$file should not be in multiple source directories!")
                   }
                 }
           (streams in haxeConfiguration).value.log.info(processBuilder.mkString("\"", "\" \"", "\""))
