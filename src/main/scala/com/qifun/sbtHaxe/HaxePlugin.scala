@@ -202,7 +202,8 @@ final object HaxePlugin extends Plugin {
         if (directoryCount == 0 && fileCount == 0) {
           Seq()
         } else {
-          (if (fileCount > 0 && files(0).getPath.toString.endsWith(".hx")) {
+          
+          (if (fileCount > 0 && (files exists { _.getPath.toString.endsWith("hx") })) {
             Seq("--include",
               files(0).relativeTo(projectSource) match {
                 case Some(relativeFile: File) =>
