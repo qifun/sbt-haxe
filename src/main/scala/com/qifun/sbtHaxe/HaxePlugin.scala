@@ -8,16 +8,20 @@ import java.nio.file.Path
 import scala.Some
 
 final object HaxePlugin extends Plugin {
+
+  final val Haxe = config("haxe")
+  final val TestHaxe = config("test-haxe")
+
   final val haxeOptions = SettingKey[Seq[String]]("haxe-options", "Additional command-line options for Haxe compiler.")
   final val haxeCommand = SettingKey[String]("haxe-command", "The Haxe executable.")
   final val haxelibCommand = SettingKey[String]("haxeilb-command", "The haxelib executable")
   final val haxe = TaskKey[Seq[File]]("haxe", "Convert Haxe source code to Java.")
-  final val Haxe = config("haxe")
-  final val TestHaxe = config("test-haxe")
-  final val dox = TaskKey[Seq[File]]("dox", "Generate haxe documentation.")
+  final val dox = TaskKey[Seq[File]]("dox", "Generate Haxe documentation.")
+  final val doxPlatforms = SettingKey[Seq[String]]("dox-platforms", "The platforms that Haxe documentation is generated for.")
 
   override final def globalSettings =
     super.globalSettings ++ Seq(
+      doxPlatforms := Seq("java"),
       haxeCommand := "haxe",
       haxelibCommand := "haxelib",
       haxeOptions := Seq())
@@ -78,29 +82,31 @@ final object HaxePlugin extends Plugin {
         IO.withTemporaryDirectory { temporaryDirectory =>
           (streams in haxeConfiguration).value.log.info("Generating haxe document...")
 
-          val processBuilderXml =
-            Seq[String](
-              (haxeCommand in injectConfiguration).value,
-              "-D", "doc-gen",
-              "-xml", ((crossTarget in haxeConfiguration).value / "java.xml" ).toString,
-              "-java", "dummy", "--no-output") ++
-              (haxeOptions in injectConfiguration in dox).value ++
-              projectPathFlags(haxeConfiguration.name, sourceDir.toString, (sourceDirectory in haxeConfiguration).value.getPath, deps) ++
-              (for (path <- (managedClasspath in Compile).value) yield Seq("-java-lib", path.data.toString)).flatten ++
-              haxeSources(in, (sourceDirectories in haxeConfiguration).value)
-          (streams in haxeConfiguration).value.log.info(processBuilderXml.mkString("\"", "\" \"", "\""))
+          val logger = (streams in haxeConfiguration).value.log
+          val sourceManagedValue = (sourceManaged in injectConfiguration).value
+          for (doxPlatform <- (doxPlatforms in injectConfiguration).value) {
+            val processBuilderXml =
+              Seq[String](
+                (haxeCommand in injectConfiguration).value,
+                "-D", "doc-gen",
+                "-xml", ((crossTarget in haxeConfiguration).value / raw"$doxPlatform.xml").toString,
+                raw"-$doxPlatform", "dummy", "--no-output") ++
+                (haxeOptions in injectConfiguration in dox).value ++
+                projectPathFlags(haxeConfiguration.name, sourceDir.toString, (sourceDirectory in haxeConfiguration).value.getPath, deps) ++
+                (for (path <- (managedClasspath in Compile).value) yield Seq("-java-lib", path.data.toString)).flatten ++
+                haxeSources(in, (sourceDirectories in haxeConfiguration).value)
+            (streams in haxeConfiguration).value.log.info(processBuilderXml.mkString("\"", "\" \"", "\""))
+            processBuild(processBuilderXml, temporaryDirectory, sourceManagedValue, logger)
+          }
 
           val processBuildDoc =
             Seq[String](
               (haxelibCommand in injectConfiguration).value,
               "run", "dox", "--input-path", (crossTarget in haxeConfiguration).value.toString,
-              "--output-path", ((crossTarget in haxeConfiguration).value / "doc" ).toString) ++
+              "--output-path", ((crossTarget in haxeConfiguration).value / "doc").toString) ++
               haxelibIncludeFlags(sourceDir, sourceDir)
           (streams in haxeConfiguration).value.log.info(processBuildDoc.mkString("\"", "\" \"", "\""))
 
-          val sourceManagedValue = (sourceManaged in injectConfiguration).value
-          val logger = (streams in haxeConfiguration).value.log
-          processBuild(processBuilderXml, temporaryDirectory, sourceManagedValue, logger)
           processBuild(processBuildDoc, temporaryDirectory, sourceManagedValue, logger)
         }
       }
@@ -212,7 +218,7 @@ final object HaxePlugin extends Plugin {
                 case _ => ""
               })
           } else Seq()) ++
-          	  directories.foldLeft(Seq[String]())( (foldIncludes, directory) => {
+            directories.foldLeft(Seq[String]())((foldIncludes, directory) => {
               val directoryReg = directory.relativeTo(projectSource) match {
                 case Some(relativePath: File) =>
                   val path = relativePath.getPath.toString
