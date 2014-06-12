@@ -50,12 +50,12 @@ final object HaxePlugin extends Plugin {
           val processBuilder =
             Seq[String](
               (haxeCommand in injectConfiguration).value) ++
-              parseProjectPathes(haxeConfiguration.name, (baseDirectory { _ / "src" / "haxe" }).value.toString, (sourceDirectory in haxeConfiguration).value.getPath, deps) ++
-              parseJarPathes((managedClasspath in Compile).value) ++
+              projectPathFlags(haxeConfiguration.name, (baseDirectory { _ / "src" / "haxe" }).value.toString, (sourceDirectory in haxeConfiguration).value.getPath, deps) ++
+              (for (path <- (managedClasspath in Compile).value) yield Seq("-java-lib", path.data.toString)).flatten ++
               Seq("-java", temporaryDirectory.getPath,
                 "-D", "no-compilation") ++
                 (haxeOptions in injectConfiguration).value ++
-                parseHaxeSource(in, (sourceDirectories in haxeConfiguration).value)
+                haxeSources(in, (sourceDirectories in haxeConfiguration).value)
           (streams in haxeConfiguration).value.log.info(processBuilder.mkString("\"", "\" \"", "\""))
           val sourceManagedValue = (sourceManaged in injectConfiguration).value
           val logger = (streams in haxeConfiguration).value.log
@@ -82,19 +82,19 @@ final object HaxePlugin extends Plugin {
             Seq[String](
               (haxeCommand in injectConfiguration).value,
               "-D", "doc-gen",
-              "-xml", (baseDirectory { _ / "target" / "java.xml" }).value.toString,
+              "-xml", ((crossTarget in haxeConfiguration).value / "java.xml" ).toString,
               "-java", "dummy", "--no-output") ++
-              parseProjectPathes(haxeConfiguration.name, sourceDir.toString, (sourceDirectory in haxeConfiguration).value.getPath, deps) ++
-              parseJarPathes((managedClasspath in Compile).value) ++
-              parseHaxeSource(in, (sourceDirectories in haxeConfiguration).value)
+              projectPathFlags(haxeConfiguration.name, sourceDir.toString, (sourceDirectory in haxeConfiguration).value.getPath, deps) ++
+              (for (path <- (managedClasspath in Compile).value) yield Seq("-java-lib", path.data.toString)).flatten ++
+              haxeSources(in, (sourceDirectories in haxeConfiguration).value)
           (streams in haxeConfiguration).value.log.info(processBuilderXml.mkString("\"", "\" \"", "\""))
 
           val processBuildDoc =
             Seq[String](
               (haxelibCommand in injectConfiguration).value,
-              "run", "dox", "--input-path", (baseDirectory { _ / "target" }).value.toString,
-              "--output-path", (baseDirectory { _ / "target" / "doc" }).value.toString) ++
-              parseInclude(sourceDir, sourceDir)
+              "run", "dox", "--input-path", (crossTarget in haxeConfiguration).value.toString,
+              "--output-path", ((crossTarget in haxeConfiguration).value / "doc" ).toString) ++
+              haxelibIncludeFlags(sourceDir, sourceDir)
           (streams in haxeConfiguration).value.log.info(processBuildDoc.mkString("\"", "\" \"", "\""))
 
           val sourceManagedValue = (sourceManaged in injectConfiguration).value
@@ -152,7 +152,7 @@ final object HaxePlugin extends Plugin {
   /**
    * Parse the project and sub project's source path.
    */
-  private final def parseProjectPathes(
+  private final def projectPathFlags(
     configurationName: String,
     mainProjectPath: String,
     projectPath: String,
@@ -179,18 +179,7 @@ final object HaxePlugin extends Plugin {
       testProjectPath
   }
 
-  /**
-   * Parse the path of library dependencies(.jar)
-   */
-  private final def parseJarPathes(managedClasspath: Seq[sbt.Attributed[java.io.File]]) = {
-    val jarPathes = managedClasspath map {
-      jarPath =>
-        jarPath.data.toString
-    }
-    jarPathes.foldLeft(Seq[String]())(_ ++ Seq("-java-lib", _))
-  }
-
-  private final def parseHaxeSource(in: Set[File], parents: Seq[sbt.File]) = {
+  private final def haxeSources(in: Set[File], parents: Seq[sbt.File]) = {
     in.map { file =>
       val relativePaths = for {
         parent <- parents
@@ -204,7 +193,7 @@ final object HaxePlugin extends Plugin {
     }
   }
 
-  private final def parseInclude(projectSource: File, source: File): Seq[String] = {
+  private final def haxelibIncludeFlags(projectSource: File, source: File): Seq[String] = {
     source.listFiles partition (_.isDirectory) match {
       case (directories, files) => {
         val fileCount = files.count(_ => true)
@@ -213,7 +202,7 @@ final object HaxePlugin extends Plugin {
         if (directoryCount == 0 && fileCount == 0) {
           Seq()
         } else {
-          (if (fileCount > 0) {
+          (if (fileCount > 0 && files(0).getPath.toString.endsWith(".hx")) {
             Seq("--include",
               files(0).relativeTo(projectSource) match {
                 case Some(relativeFile: File) =>
@@ -230,13 +219,16 @@ final object HaxePlugin extends Plugin {
                 case _ => ""
               }
               foldIncludes ++ Seq("--include", directoryReg) ++
-                parseInclude(projectSource, directory)
+                haxelibIncludeFlags(projectSource, directory)
             })
         }
       }
     }
   }
 
+  /**
+   * execute the command
+   */
   private final def processBuild(command: Seq[String], temporaryDirectory: File, sourceManaged: File, logger: Logger): Set[File] = {
     command !< logger match {
       case 0 => {
