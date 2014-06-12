@@ -4,11 +4,13 @@ import sbt.Plugin
 import sbt.Keys._
 import sbt._
 import java.io.File
+import java.nio.file.Path
 import scala.Some
 
 final object HaxePlugin extends Plugin {
   final val haxeOptions = SettingKey[Seq[String]]("haxe-options", "Additional command-line options for Haxe compiler.")
   final val haxeCommand = SettingKey[String]("haxe-command", "The Haxe executable.")
+  final val haxelibCommand = SettingKey[String]("haxeilb-command", "The haxelib executable")
   final val haxe = TaskKey[Seq[File]]("haxe", "Convert Haxe source code to Java.")
   final val Haxe = config("haxe")
   final val TestHaxe = config("test-haxe")
@@ -17,6 +19,7 @@ final object HaxePlugin extends Plugin {
   override final def globalSettings =
     super.globalSettings ++ Seq(
       haxeCommand := "haxe",
+      haxelibCommand := "haxelib",
       haxeOptions := Seq())
 
   /**
@@ -54,20 +57,9 @@ final object HaxePlugin extends Plugin {
                 (haxeOptions in injectConfiguration).value ++
                 parseHaxeSource(in, (sourceDirectories in haxeConfiguration).value)
           (streams in haxeConfiguration).value.log.info(processBuilder.mkString("\"", "\" \"", "\""))
-          processBuilder !< (streams in haxeConfiguration).value.log match {
-            case 0 => {
-              val moveMapping = (temporaryDirectory ** globFilter("*.java")) x {
-                _.relativeTo(temporaryDirectory).map {
-                  (sourceManaged in injectConfiguration).value / _.getPath
-                }
-              }
-              IO.move(moveMapping)
-              moveMapping.map { _._2 }(collection.breakOut)
-            }
-            case result => {
-              throw new MessageOnlyException("haxe returns " + result)
-            }
-          }
+          val sourceManagedValue = (sourceManaged in injectConfiguration).value
+          val logger = (streams in haxeConfiguration).value.log
+          processBuild(processBuilder, temporaryDirectory, sourceManagedValue, logger)
         }
       }
       cachedTranfer((sources in haxeConfiguration).value.toSet).toSeq
@@ -80,36 +72,35 @@ final object HaxePlugin extends Plugin {
     dox in injectConfiguration := {
       val cache = (streams in haxeConfiguration).value.cacheDirectory
       val deps = (buildDependencies in haxeConfiguration).value.classpath((thisProjectRef in haxeConfiguration).value)
+      val sourceDir = (baseDirectory { _ / "src" / "haxe" }).value
 
       val cachedTranfer = FileFunction.cached(cache / "dox", inStyle = FilesInfo.lastModified, outStyle = FilesInfo.exists) { (in: Set[File]) =>
         IO.withTemporaryDirectory { temporaryDirectory =>
           (streams in haxeConfiguration).value.log.info("Generating haxe document...")
 
-          val processBuilder =
+          val processBuilderXml =
             Seq[String](
               (haxeCommand in injectConfiguration).value,
               "-D", "doc-gen",
               "-xml", (baseDirectory { _ / "target" / "java.xml" }).value.toString,
               "-java", "dummy", "--no-output") ++
-              parseProjectPathes(haxeConfiguration.name, (baseDirectory { _ / "src" / "haxe" }).value.toString, (sourceDirectory in haxeConfiguration).value.getPath, deps) ++
+              parseProjectPathes(haxeConfiguration.name, sourceDir.toString, (sourceDirectory in haxeConfiguration).value.getPath, deps) ++
               parseJarPathes((managedClasspath in Compile).value) ++
               parseHaxeSource(in, (sourceDirectories in haxeConfiguration).value)
+          (streams in haxeConfiguration).value.log.info(processBuilderXml.mkString("\"", "\" \"", "\""))
 
-          (streams in haxeConfiguration).value.log.info(processBuilder.mkString("\"", "\" \"", "\""))
-          processBuilder !< (streams in haxeConfiguration).value.log match {
-            case 0 => {
-              val moveMapping = (temporaryDirectory ** globFilter("*.java")) x {
-                _.relativeTo(temporaryDirectory).map {
-                  (sourceManaged in injectConfiguration).value / _.getPath
-                }
-              }
-              IO.move(moveMapping)
-              moveMapping.map { _._2 }(collection.breakOut)
-            }
-            case result => {
-              throw new MessageOnlyException("haxe returns " + result)
-            }
-          }
+          val processBuildDoc =
+            Seq[String](
+              (haxelibCommand in injectConfiguration).value,
+              "run", "dox", "--input-path", (baseDirectory { _ / "target" }).value.toString,
+              "--output-path", (baseDirectory { _ / "target" / "doc" }).value.toString) ++
+              parseInclude(sourceDir, sourceDir)
+          (streams in haxeConfiguration).value.log.info(processBuildDoc.mkString("\"", "\" \"", "\""))
+
+          val sourceManagedValue = (sourceManaged in injectConfiguration).value
+          val logger = (streams in haxeConfiguration).value.log
+          processBuild(processBuilderXml, temporaryDirectory, sourceManagedValue, logger)
+          processBuild(processBuildDoc, temporaryDirectory, sourceManagedValue, logger)
         }
       }
       cachedTranfer((sources in haxeConfiguration).value.toSet).toSeq
@@ -158,7 +149,7 @@ final object HaxePlugin extends Plugin {
         sourceGenerators in Test <+= haxe in Test,
         doxSetting(Haxe, Compile))
 
-  /*
+  /**
    * Parse the project and sub project's source path.
    */
   private final def parseProjectPathes(
@@ -174,6 +165,7 @@ final object HaxePlugin extends Plugin {
         case _ => ""
       }
     }
+
     // Add the haxe project's source path in order to build the test-haxe
     val testProjectPath: Seq[String] = configurationName match {
       case "test-haxe" => Seq("-cp", mainProjectPath)
@@ -186,7 +178,7 @@ final object HaxePlugin extends Plugin {
   }
 
   /**
-   * Parse the path of library dependencies(.jar) 
+   * Parse the path of library dependencies(.jar)
    */
   private final def parseJarPathes(managedClasspath: Seq[sbt.Attributed[java.io.File]]) = {
     val jarPathes = managedClasspath map {
@@ -209,4 +201,56 @@ final object HaxePlugin extends Plugin {
       }
     }
   }
+
+  private final def parseInclude(projectSource: File, source: File): Seq[String] = {
+    source.listFiles partition (_.isDirectory) match {
+      case (directories, files) => {
+        val fileCount = files.count(_ => true)
+        val directoryCount = directories.count(_ => true)
+        val fileSeparator = System.getProperty("file.separator")
+        if (directoryCount == 0 && fileCount == 0) {
+          Seq()
+        } else {
+          (if (fileCount > 0) {
+            Seq("--include",
+              files(0).relativeTo(projectSource) match {
+                case Some(relativeFile: File) =>
+                  val path = relativeFile.getPath.toString
+                  "^" + path.substring(0, path.lastIndexOf(fileSeparator) + 1).replace(fileSeparator, "\\.") + "[a-zA-Z_0-9]*$"
+                case _ => ""
+              })
+          } else Seq()) ++
+            ((Seq[String]() /: directories)((foldIncludes, directory) => {
+              val directoryReg = directory.relativeTo(projectSource) match {
+                case Some(relativePath: File) =>
+                  val path = relativePath.getPath.toString
+                  "^" + path.replace(fileSeparator, "\\.") + "$"
+                case _ => ""
+              }
+              foldIncludes ++ Seq("--include", directoryReg) ++
+                parseInclude(projectSource, directory)
+            }))
+        }
+      }
+    }
+  }
+
+  private final def processBuild(command: Seq[String], temporaryDirectory: File, sourceManaged: File, logger: Logger): Set[File] = {
+    command !< logger match {
+      case 0 => {
+        val moveMapping = (temporaryDirectory ** globFilter("*.java")) x {
+          _.relativeTo(temporaryDirectory).map {
+            sourceManaged / _.getPath
+          }
+        }
+        IO.move(moveMapping)
+        moveMapping.map { _._2 }(collection.breakOut)
+      }
+      case result => {
+        throw new MessageOnlyException("haxe returns " + result)
+      }
+    }
+  }
 }
+
+// vim: et sts=2 sw=2
