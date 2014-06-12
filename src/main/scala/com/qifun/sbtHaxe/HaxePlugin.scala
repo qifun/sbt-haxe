@@ -161,7 +161,9 @@ final object HaxePlugin extends Plugin {
       ResolvedClasspathDependency(dep: ProjectRef, _) <- deps
     } yield {
       dep match {
-        case ProjectRef(path, subProject) => (path.getPath.substring(1) + subProject + "/src/haxe").replace("/", System.getProperty("file.separator"))
+        case ProjectRef(path, subProject) =>
+          val subProjectPath = new File(path.toURL.getFile)
+          (subProjectPath / subProject / "src" / "haxe").toString
         case _ => ""
       }
     }
@@ -173,7 +175,7 @@ final object HaxePlugin extends Plugin {
     }
 
     Seq("-cp", projectPath) ++
-      (Seq[String]() /: dependSources)(_ ++ Seq("-cp", _)) ++
+      (dependSources.foldLeft(Seq[String]())(_ ++ Seq("-cp", _))) ++
       testProjectPath
   }
 
@@ -185,7 +187,7 @@ final object HaxePlugin extends Plugin {
       jarPath =>
         jarPath.data.toString
     }
-    (Seq[String]() /: jarPathes)(_ ++ Seq("-java-lib", _))
+    jarPathes.foldLeft(Seq[String]())(_ ++ Seq("-java-lib", _))
   }
 
   private final def parseHaxeSource(in: Set[File], parents: Seq[sbt.File]) = {
@@ -220,7 +222,7 @@ final object HaxePlugin extends Plugin {
                 case _ => ""
               })
           } else Seq()) ++
-            ((Seq[String]() /: directories)((foldIncludes, directory) => {
+          	  directories.foldLeft(Seq[String]())( (foldIncludes, directory) => {
               val directoryReg = directory.relativeTo(projectSource) match {
                 case Some(relativePath: File) =>
                   val path = relativePath.getPath.toString
@@ -229,7 +231,7 @@ final object HaxePlugin extends Plugin {
               }
               foldIncludes ++ Seq("--include", directoryReg) ++
                 parseInclude(projectSource, directory)
-            }))
+            })
         }
       }
     }
@@ -238,7 +240,7 @@ final object HaxePlugin extends Plugin {
   private final def processBuild(command: Seq[String], temporaryDirectory: File, sourceManaged: File, logger: Logger): Set[File] = {
     command !< logger match {
       case 0 => {
-		var temporarySrc = temporaryDirectory / "src"
+        val temporarySrc = temporaryDirectory / "src"
         val moveMapping = (temporaryDirectory ** globFilter("*.java")) x {
           _.relativeTo(temporarySrc).map {
             sourceManaged / _.getPath
