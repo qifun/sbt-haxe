@@ -51,7 +51,7 @@ final object HaxePlugin extends Plugin {
               parseJarPathes((managedClasspath in Compile).value) ++
               Seq("-java", temporaryDirectory.getPath,
                 "-D", "no-compilation") ++
-                (haxeOptions in injectConfiguration).value ++
+                (haxeOptions in injectConfiguration in haxe).value ++
                 parseHaxeSource(in, (sourceDirectories in haxeConfiguration).value)
           (streams in haxeConfiguration).value.log.info(processBuilder.mkString("\"", "\" \"", "\""))
           processBuilder !< (streams in haxeConfiguration).value.log match {
@@ -92,6 +92,7 @@ final object HaxePlugin extends Plugin {
               "-D", "doc-gen",
               "-xml", (baseDirectory { _ / "target" / "java.xml" }).value.toString,
               "-java", "dummy", "--no-output") ++
+              (haxeOptions in injectConfiguration in dox).value ++
               parseProjectPathes(haxeConfiguration.name, (baseDirectory { _ / "src" / "haxe" }).value.toString, (sourceDirectory in haxeConfiguration).value.getPath, deps) ++
               parseJarPathes((managedClasspath in Compile).value) ++
               parseHaxeSource(in, (sourceDirectories in haxeConfiguration).value)
@@ -187,7 +188,7 @@ final object HaxePlugin extends Plugin {
   }
 
   /**
-   * Parse the path of library dependencies(.jar) 
+   * Parse the path of library dependencies(.jar)
    */
   private final def parseJarPathes(managedClasspath: Seq[sbt.Attributed[java.io.File]]) = {
     val jarPathes = managedClasspath map {
