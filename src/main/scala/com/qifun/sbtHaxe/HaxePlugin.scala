@@ -238,8 +238,9 @@ final object HaxePlugin extends Plugin {
   private final def processBuild(command: Seq[String], temporaryDirectory: File, sourceManaged: File, logger: Logger): Set[File] = {
     command !< logger match {
       case 0 => {
+		var temporarySrc = temporaryDirectory / "src"
         val moveMapping = (temporaryDirectory ** globFilter("*.java")) x {
-          _.relativeTo(temporaryDirectory).map {
+          _.relativeTo(temporarySrc).map {
             sourceManaged / _.getPath
           }
         }
