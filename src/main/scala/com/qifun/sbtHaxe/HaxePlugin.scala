@@ -202,7 +202,6 @@ final object HaxePlugin extends Plugin {
     } else {
       Seq("-cp", (targetDirectory / "unpacked_haxe").getPath)
     }
-    println("#@!@#$$$#:" + unpackedHaxe)
 
     if (isMain)
       dependSources ++ unpackedHaxe
