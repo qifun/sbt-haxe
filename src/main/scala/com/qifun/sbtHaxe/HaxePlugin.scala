@@ -54,23 +54,6 @@ final object HaxePlugin extends Plugin {
         IO.withTemporaryDirectory { temporaryDirectory =>
           val deps = (buildDependencies in haxeConfiguration).value.classpath((thisProjectRef in haxeConfiguration).value)
 
-          /*          val unpack = FileFunction.cached(cache / "unpacked_haxe", inStyle = FilesInfo.lastModified, outStyle = FilesInfo.exists) { haxeJars: Set[File] =>
-            for {
-              haxeJar <- haxeJars
-              output <- IO.unzip(haxeJar, (crossTarget in haxeConfiguration).value / "unpacked_haxe")
-            } yield output
-          }
-          val managedFiles = (managedClasspath in injectConfiguration).value
-          val (unpacking, rawIncludes) =
-            managedFiles.partition { _.data.getName.endsWith("-haxe.jar") }
-          val unpacked = unpack(unpacking.map { _.data }(collection.breakOut))
-          val unpackedHaxe = if (unpacked.isEmpty) {
-            Nil
-          } else {
-            Seq("-cp", ((crossTarget in haxeConfiguration).value / "unpacked_haxe").getPath)
-          }
-          (streams in haxeConfiguration).value.log.info("#@!@#$$$#:" + unpackedHaxe)
-*/
           (streams in haxeConfiguration).value.log.info(".........." + (managedClasspath in Compile).value)
           val processBuilder =
             Seq[String](
