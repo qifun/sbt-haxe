@@ -63,7 +63,7 @@ final object HaxePlugin extends Plugin {
               Seq("-java", temporaryDirectory.getPath,
                 "-D", "no-compilation") ++
                 (haxeOptions in injectConfiguration in haxe).value ++
-                haxeSources(in, (sourceDirectories in haxeConfiguration).value)
+                haxeModules(in, (sourceDirectories in haxeConfiguration).value)
           (streams in haxeConfiguration).value.log.info(processBuilder.mkString("\"", "\" \"", "\""))
           val sourceManagedValue = (sourceManaged in injectConfiguration).value
           val logger = (streams in haxeConfiguration).value.log
@@ -102,7 +102,7 @@ final object HaxePlugin extends Plugin {
                 (for (sourcePath <- (sourceDirectories in haxeConfiguration).value) yield Seq("-cp", sourcePath.getPath.toString)).flatten ++
                 projectPathFlags((sourceDirectories in Haxe).value, data, deps, haxeConfiguration == Haxe, haxeStreams, target, managedFiles) ++
                 (for (path <- (managedClasspath in injectConfiguration).value) yield Seq("-java-lib", path.data.toString)).flatten ++
-                haxeSources(in, (sourceDirectories in haxeConfiguration).value)
+                haxeModules(in, (sourceDirectories in haxeConfiguration).value)
             (streams in haxeConfiguration).value.log.info(processBuilderXml.mkString("\"", "\" \"", "\""))
             processBuild(processBuilderXml, temporaryDirectory, sourceManagedValue, logger)
           }
@@ -210,7 +210,7 @@ final object HaxePlugin extends Plugin {
   }
 
   /**
-   * Build the Haxe module name according to the Haxe souce file name.
+   * Build the Haxe module name according to the Haxe file name 
    */
   private final def haxeModules(haxeSources: Set[File], parents: Seq[sbt.File]) = {
     haxeSources.map { file =>
