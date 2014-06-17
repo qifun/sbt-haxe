@@ -173,7 +173,7 @@ final object HaxePlugin extends Plugin {
         doxSetting(Haxe, Compile))
 
   /**
-   * Parse the project and sub project's source path.
+   * Builds -cp xxx command-line options for haxe compile from dependent projects.
    */
   private final def projectPathFlags(
     sourcePathes: Seq[File],
@@ -209,8 +209,11 @@ final object HaxePlugin extends Plugin {
       (for (sourcePath <- sourcePathes) yield Seq("-cp", sourcePath.getPath.toString)).flatten ++ dependSources ++ unpackedHaxe
   }
 
-  private final def haxeSources(in: Set[File], parents: Seq[sbt.File]) = {
-    in.map { file =>
+  /**
+   * Build the Haxe module name according to the Haxe souce file name.
+   */
+  private final def haxeModules(haxeSources: Set[File], parents: Seq[sbt.File]) = {
+    haxeSources.map { file =>
       val relativePaths = for {
         parent <- parents
         relativePath <- file.relativeTo(parent)
