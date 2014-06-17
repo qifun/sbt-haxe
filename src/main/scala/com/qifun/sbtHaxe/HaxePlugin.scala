@@ -54,7 +54,6 @@ final object HaxePlugin extends Plugin {
         IO.withTemporaryDirectory { temporaryDirectory =>
           val deps = (buildDependencies in haxeConfiguration).value.classpath((thisProjectRef in haxeConfiguration).value)
 
-          (streams in haxeConfiguration).value.log.info(".........." + (managedClasspath in Compile).value)
           val processBuilder =
             Seq[String](
               (haxeCommand in injectConfiguration).value) ++
