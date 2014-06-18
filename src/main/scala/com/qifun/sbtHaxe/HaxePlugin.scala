@@ -70,7 +70,7 @@ final object HaxePlugin extends Plugin {
           processBuilder !< logger match {
             case 0 => {
               val temporarySrc = temporaryDirectory / "src"
-              val moveMapping = (temporaryDirectory ** globFilter("*.java")) x {
+              val moveMapping = (temporaryDirectory ** globFilter("*.java")) pair {
                 _.relativeTo(temporarySrc).map {
                   sourceManagedValue / _.getPath
                 }
