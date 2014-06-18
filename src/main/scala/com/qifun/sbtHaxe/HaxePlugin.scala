@@ -98,10 +98,10 @@ final object HaxePlugin extends Plugin {
       val data = (settingsData in haxeConfiguration).value
       val target = (crossTarget in haxeConfiguration).value
       val managedFiles = (managedClasspath in injectConfiguration).value
+      val doxOutputDirectory = (crossTarget in haxeConfiguration).value / "doc"
 
       val cachedTranfer = FileFunction.cached(haxeStreams.cacheDirectory / "dox", inStyle = FilesInfo.lastModified, outStyle = FilesInfo.exists) { (in: Set[File]) =>
         (streams in haxeConfiguration).value.log.info("Generating haxe document...")
-
         val logger = (streams in haxeConfiguration).value.log
         val sourceManagedValue = (sourceManaged in injectConfiguration).value
         for (doxPlatform <- (doxPlatforms in injectConfiguration).value) {
@@ -117,18 +117,32 @@ final object HaxePlugin extends Plugin {
               (for (path <- (managedClasspath in injectConfiguration).value) yield Seq("-java-lib", path.data.toString)).flatten ++
               haxeModules(in, (sourceDirectories in haxeConfiguration).value)
           (streams in haxeConfiguration).value.log.info(processBuilderXml.mkString("\"", "\" \"", "\""))
-          processBuilderXml !< logger
+          processBuilderXml !< logger match {
+            case 0 =>
+              (streams in haxeConfiguration).value.log.info("Generate java.xml success!")
+            case result =>
+              throw new MessageOnlyException("Generate java.xml fail: " + result)
+          }
         }
 
         val processBuildDoc =
           Seq[String](
             (haxelibCommand in injectConfiguration).value,
             "run", "dox", "--input-path", (crossTarget in haxeConfiguration).value.toString,
-            "--output-path", ((crossTarget in haxeConfiguration).value / "doc").toString) ++
+            "--output-path", doxOutputDirectory.getPath.toString) ++
             (for (sourcePath <- sourcePathes) yield haxelibIncludeFlags(sourcePath, sourcePath)).flatten
         (streams in haxeConfiguration).value.log.info(processBuildDoc.mkString("\"", "\" \"", "\""))
-        processBuildDoc !< logger
-        Seq[File]().toSet
+        processBuildDoc !< logger match {
+          case 0 =>
+            val generatedFiles = (doxOutputDirectory ** (globFilter("*.html") || globFilter("*.css") || globFilter("*.js"))) x {
+              _.relativeTo(doxOutputDirectory).map {
+                doxOutputDirectory / _.getPath
+              }
+            }
+            generatedFiles.map { _._2 }(collection.breakOut)
+          case result =>
+            throw new MessageOnlyException("haxe create doc exception: " + result)
+        }
       }
       cachedTranfer((sources in haxeConfiguration).value.toSet)
     }
