@@ -58,7 +58,7 @@ final object HaxePlugin extends Plugin {
             Seq[String](
               (haxeCommand in injectConfiguration).value) ++
               (for (sourcePath <- (sourceDirectories in haxeConfiguration).value) yield Seq("-cp", sourcePath.getPath.toString)).flatten ++
-              projectPathFlags((internalDependencyClasspath in haxeConfiguration).value, (sourceDirectories in Haxe).value, data, deps, haxeConfiguration == Haxe, haxeStreams, target, managedFiles) ++
+              projectPathFlags((internalDependencyClasspath in haxeConfiguration).value, haxeStreams, target, managedFiles) ++
               (for (path <- (managedClasspath in injectConfiguration).value) yield Seq("-java-lib", path.data.toString)).flatten ++
               Seq("-java", temporaryDirectory.getPath,
                 "-D", "no-compilation") ++
@@ -113,7 +113,7 @@ final object HaxePlugin extends Plugin {
               raw"-$doxPlatform", "dummy", "--no-output") ++
               (haxeOptions in injectConfiguration in dox).value ++
               (for (sourcePath <- (sourceDirectories in haxeConfiguration).value) yield Seq("-cp", sourcePath.getPath.toString)).flatten ++
-              projectPathFlags((internalDependencyClasspath in haxeConfiguration).value, (sourceDirectories in Haxe).value, data, deps, haxeConfiguration == Haxe, haxeStreams, target, managedFiles) ++
+              projectPathFlags((internalDependencyClasspath in haxeConfiguration).value, haxeStreams, target, managedFiles) ++
               (for (path <- (managedClasspath in injectConfiguration).value) yield Seq("-java-lib", path.data.toString)).flatten ++
               haxeModules(in, (sourceDirectories in haxeConfiguration).value)
           (streams in haxeConfiguration).value.log.info(processBuilderXml.mkString("\"", "\" \"", "\""))
@@ -217,10 +217,6 @@ final object HaxePlugin extends Plugin {
    */
   private final def projectPathFlags(
     depsClasspath: Classpath,
-    sourcePathes: Seq[File],
-    data: Settings[Scope],
-    deps: Seq[ClasspathDep[sbt.ProjectRef]],
-    isMain: Boolean,
     taskStreams: TaskStreams,
     targetDirectory: RichFile,
     managedFiles: Seq[Attributed[File]]) = {
