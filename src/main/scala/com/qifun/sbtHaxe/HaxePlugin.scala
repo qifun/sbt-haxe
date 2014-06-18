@@ -134,7 +134,7 @@ final object HaxePlugin extends Plugin {
         (streams in haxeConfiguration).value.log.info(processBuildDoc.mkString("\"", "\" \"", "\""))
         processBuildDoc !< logger match {
           case 0 =>
-            val generatedFiles = (doxOutputDirectory ** (globFilter("*.html") || globFilter("*.css") || globFilter("*.js"))) x {
+            val generatedFiles = (doxOutputDirectory ** (globFilter("*.html") || globFilter("*.css") || globFilter("*.js"))) pair {
               _.relativeTo(doxOutputDirectory).map {
                 doxOutputDirectory / _.getPath
               }
