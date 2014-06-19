@@ -16,7 +16,7 @@ final object HaxePlugin extends Plugin {
   final val haxeCommand = SettingKey[String]("haxe-command", "The Haxe executable.")
   final val haxelibCommand = SettingKey[String]("haxeilb-command", "The haxelib executable")
   final val haxe = TaskKey[Seq[File]]("haxe", "Convert Haxe source code to Java.")
-  final val dox = TaskKey[Unit]("dox", "Generate Haxe documentation.")
+  final val dox = TaskKey[Seq[File]]("dox", "Generate Haxe documentation.")
   final val doxPlatforms = SettingKey[Seq[String]]("dox-platforms", "The platforms that Haxe documentation is generated for.")
 
   override final def globalSettings =
@@ -119,7 +119,7 @@ final object HaxePlugin extends Plugin {
           (streams in haxeConfiguration).value.log.info(processBuilderXml.mkString("\"", "\" \"", "\""))
           processBuilderXml !< logger match {
             case 0 =>
-              (streams in haxeConfiguration).value.log.info("Generate java.xml success!")
+              (streams in haxeConfiguration).value.log.debug("Generate java.xml success!")
             case result =>
               throw new MessageOnlyException("Generate java.xml fail: " + result)
           }
@@ -134,17 +134,12 @@ final object HaxePlugin extends Plugin {
         (streams in haxeConfiguration).value.log.info(processBuildDoc.mkString("\"", "\" \"", "\""))
         processBuildDoc !< logger match {
           case 0 =>
-            val generatedFiles = (doxOutputDirectory ** (globFilter("*.html") || globFilter("*.css") || globFilter("*.js"))) pair {
-              _.relativeTo(doxOutputDirectory).map {
-                doxOutputDirectory / _.getPath
-              }
-            }
-            generatedFiles.map { _._2 }(collection.breakOut)
+            (doxOutputDirectory ** (globFilter("*.html") || globFilter("*.css") || globFilter("*.js"))).get.toSet
           case result =>
             throw new MessageOnlyException("haxe create doc exception: " + result)
         }
       }
-      cachedTranfer((sources in haxeConfiguration).value.toSet)
+      cachedTranfer((sources in haxeConfiguration).value.toSet).toSeq
     }
   }
 
@@ -174,28 +169,27 @@ final object HaxePlugin extends Plugin {
               Classpaths.analyzed(f, compile.value)
             }
           },
-          managedClasspath <<= (configuration, classpathTypes, update) map {
-            (config: Configuration, jarTypes: Set[String], up: UpdateReport) =>
-              up.filter(configurationFilter(config.name) && artifactFilter(classifier = config.name)).toSeq.map {
-                case (conf, module, art, file) => {
-                  Attributed(file)(AttributeMap.empty.put(artifact.key, art).put(moduleID.key, module).put(configuration.key, config))
-                }
-              }.distinct
+          managedClasspath := {
+            update.value.filter(configurationFilter(configuration.value.name) && artifactFilter(classifier = configuration.value.name)).toSeq.map {
+              case (conf, module, art, file) => {
+                Attributed(file)(AttributeMap.empty.put(artifact.key, art).put(moduleID.key, module).put(configuration.key, configuration.value))
+              }
+            }.distinct
           },
-          internalDependencyClasspath <<=
-            (thisProjectRef, configuration, settingsData, buildDependencies) map { (projectRef: ProjectRef, conf: Configuration, data: Settings[Scope], deps: BuildDependencies) =>
-              ((for {
-                ResolvedClasspathDependency(dep, _) <- deps.classpath(projectRef)
-                sourceDirectoriesOption = (sourceDirectories in (dep, Haxe)).get(data)
-                if sourceDirectoriesOption.isDefined
-                directory <- sourceDirectoriesOption.get
-              } yield directory) ++ (for {
-                ac <- Classpaths.allConfigs(conf)
-                if ac != conf
-                sourcePaths <- (sourceDirectories in (projectRef, ac)).get(data).toList
-                sourcePath <- sourcePaths
-              } yield sourcePath)).classpath
-            },
+          internalDependencyClasspath := {
+            ((for {
+              ResolvedClasspathDependency(dep, _) <- buildDependencies.value.classpath(thisProjectRef.value)
+              conf <- Classpaths.allConfigs(configuration.value)
+              sourceDirectoriesOption = (sourceDirectories in (dep, conf)).get(settingsData.value)
+              if sourceDirectoriesOption.isDefined
+              directory <- sourceDirectoriesOption.get
+            } yield directory) ++ (for {
+              ac <- Classpaths.allConfigs(configuration.value)
+              if ac != configuration.value
+              sourcePaths <- (sourceDirectories in (thisProjectRef.value, ac)).get(settingsData.value).toList
+              sourcePath <- sourcePaths
+            } yield sourcePath)).classpath
+          },
           unmanagedSourceDirectories := Seq(sourceDirectory.value),
           includeFilter in unmanagedSources := "*.hx")
 
