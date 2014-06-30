@@ -134,7 +134,12 @@ final object HaxePlugin extends Plugin {
         (streams in haxeConfiguration).value.log.info(processBuildDoc.mkString("\"", "\" \"", "\""))
         processBuildDoc !< logger match {
           case 0 =>
-            (doxOutputDirectory ** (globFilter("*.html") || globFilter("*.css") || globFilter("*.js"))).get.toSet
+            (doxOutputDirectory ** (
+              globFilter("*.html") ||
+              globFilter("*.css") ||
+              globFilter("*.js") ||
+              globFilter("*.png") ||
+              globFilter("*.ico"))).get.toSet
           case result =>
             throw new MessageOnlyException("haxe create doc exception: " + result)
         }
