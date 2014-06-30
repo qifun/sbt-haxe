@@ -225,7 +225,7 @@ final object HaxePlugin extends Plugin {
         output <- IO.unzip(haxeJar, targetDirectory / "unpacked_haxe")
       } yield output
     }
-    val (unpacking, rawIncludes) = managedFiles.partition { _.data.getName.endsWith("-haxe.jar") }
+    val (unpacking, rawIncludes) = managedFiles.partition { _.data.getName.endsWith(".jar") }
     val unpacked = unpack(unpacking.map { _.data }(collection.breakOut))
     val unpackedHaxe = if (unpacked.isEmpty) {
       Nil
