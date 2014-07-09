@@ -48,7 +48,6 @@ final object HaxePlugin extends Plugin {
       val haxeStreams = (streams in haxeConfiguration).value
       val data = (settingsData in haxeConfiguration).value
       val target = (crossTarget in haxeConfiguration).value
-      val managedFiles = (managedClasspath in injectConfiguration).value
 
       val cachedTranfer = FileFunction.cached(haxeStreams.cacheDirectory / "haxe", inStyle = FilesInfo.lastModified, outStyle = FilesInfo.exists) { (in: Set[File]) =>
         IO.withTemporaryDirectory { temporaryDirectory =>
@@ -58,8 +57,8 @@ final object HaxePlugin extends Plugin {
             Seq[String](
               (haxeCommand in injectConfiguration).value) ++
               (for (sourcePath <- (sourceDirectories in haxeConfiguration).value) yield Seq("-cp", sourcePath.getPath.toString)).flatten ++
-              projectPathFlags((internalDependencyClasspath in haxeConfiguration).value, haxeStreams, target, managedFiles) ++
-              (for (path <- (managedClasspath in injectConfiguration).value) yield Seq("-java-lib", path.data.toString)).flatten ++
+              projectPathFlags((internalDependencyClasspath in haxeConfiguration).value, haxeStreams, target, includes) ++
+              (for (path <- (dependencyClasspath in haxeConfiguration).value if path.data.toPath.toFile.exists) yield Seq("-java-lib", path.data.toString)).flatten ++
               Seq("-java", temporaryDirectory.getPath,
                 "-D", "no-compilation") ++
                 (haxeOptions in injectConfiguration in haxe).value ++
@@ -97,8 +96,8 @@ final object HaxePlugin extends Plugin {
       val sourcePathes = (sourceDirectories in Haxe).value
       val data = (settingsData in haxeConfiguration).value
       val target = (crossTarget in haxeConfiguration).value
-      val managedFiles = (managedClasspath in injectConfiguration).value
       val doxOutputDirectory = (crossTarget in haxeConfiguration).value / "doc"
+      val includes = (dependencyClasspath in haxeConfiguration).value
 
       val cachedTranfer = FileFunction.cached(haxeStreams.cacheDirectory / "dox", inStyle = FilesInfo.lastModified, outStyle = FilesInfo.exists) { (in: Set[File]) =>
         (streams in haxeConfiguration).value.log.info("Generating haxe document...")
@@ -113,8 +112,8 @@ final object HaxePlugin extends Plugin {
               raw"-$doxPlatform", "dummy", "--no-output") ++
               (haxeOptions in injectConfiguration in dox).value ++
               (for (sourcePath <- (sourceDirectories in haxeConfiguration).value) yield Seq("-cp", sourcePath.getPath.toString)).flatten ++
-              projectPathFlags((internalDependencyClasspath in haxeConfiguration).value, haxeStreams, target, managedFiles) ++
-              (for (path <- (managedClasspath in injectConfiguration).value) yield Seq("-java-lib", path.data.toString)).flatten ++
+              projectPathFlags((internalDependencyClasspath in haxeConfiguration).value, haxeStreams, target, includes) ++
+              (for (path <- (dependencyClasspath in injectConfiguration).value) yield Seq("-java-lib", path.data.toString)).flatten ++
               haxeModules(in, (sourceDirectories in haxeConfiguration).value)
           (streams in haxeConfiguration).value.log.info(processBuilderXml.mkString("\"", "\" \"", "\""))
           processBuilderXml !< logger match {
@@ -175,28 +174,51 @@ final object HaxePlugin extends Plugin {
             }
           },
           managedClasspath := {
-            update.value.filter(configurationFilter(configuration.value.name) && artifactFilter(classifier = configuration.value.name)).toSeq.map {
+            update.value.toSeq.map {
               case (conf, module, art, file) => {
                 Attributed(file)(AttributeMap.empty.put(artifact.key, art).put(moduleID.key, module).put(configuration.key, configuration.value))
               }
             }.distinct
           },
           internalDependencyClasspath := {
-            ((for {
-              ResolvedClasspathDependency(dep, _) <- buildDependencies.value.classpath(thisProjectRef.value)
-              conf <- Classpaths.allConfigs(configuration.value)
-              sourceDirectoriesOption = (sourceDirectories in (dep, conf)).get(settingsData.value)
-              if sourceDirectoriesOption.isDefined
-              directory <- sourceDirectoriesOption.get
-            } yield directory) ++ (for {
+            (buildInternalDependencyClasspath(thisProjectRef.value, configuration.value, settingsData.value, buildDependencies.value, Seq[File]()) ++ (for {
               ac <- Classpaths.allConfigs(configuration.value)
               if ac != configuration.value
               sourcePaths <- (sourceDirectories in (thisProjectRef.value, ac)).get(settingsData.value).toList
               sourcePath <- sourcePaths
-            } yield sourcePath)).classpath
+            } yield sourcePath) ++ (for {
+              ResolvedClasspathDependency(dep, _) <- buildDependencies.value.classpath(thisProjectRef.value)
+              conf <- Classpaths.allConfigs(configuration.value)
+              sourceDirectories = (classDirectory in (dep, conf)).get(settingsData.value)
+              directory <- sourceDirectories
+            } yield directory)).classpath
           },
           unmanagedSourceDirectories := Seq(sourceDirectory.value),
           includeFilter in unmanagedSources := "*.hx")
+
+  private final def buildInternalDependencyClasspath(
+    projectRef: ProjectRef,
+    configuration: Configuration,
+    settingsData: Settings[Scope],
+    buildDependencies: BuildDependencies,
+    acc: Seq[File]): Seq[File] = {
+    val dependencies = buildDependencies.classpath(projectRef)
+    dependencies match {
+      case dependencies1 if !dependencies1.isEmpty =>
+        val newAcc: Seq[File] = acc ++ (for {
+          ResolvedClasspathDependency(dep, _) <- dependencies1
+          conf <- Classpaths.allConfigs(configuration)
+          sourceDirectoriesOption = (sourceDirectories in (dep, conf)).get(settingsData)
+          if sourceDirectoriesOption.isDefined
+          directory <- sourceDirectoriesOption.get
+        } yield directory)
+        dependencies.foldLeft(newAcc) { (newAcc1: Seq[File], classpathDep: ClasspathDep[ProjectRef]) =>
+          buildInternalDependencyClasspath(classpathDep.project, configuration, settingsData, buildDependencies, newAcc1)
+        }
+      case List() =>
+        acc
+    }
+  }
 
   final val haxeSettings =
     sbt.addArtifact(artifact in packageBin in Haxe, packageBin in Haxe) ++
