@@ -113,7 +113,7 @@ final object HaxePlugin extends Plugin {
               (haxeOptions in injectConfiguration in dox).value ++
               (for (sourcePath <- (sourceDirectories in haxeConfiguration).value) yield Seq("-cp", sourcePath.getPath.toString)).flatten ++
               projectPathFlags((internalDependencyClasspath in haxeConfiguration).value, haxeStreams, target, includes) ++
-              (for (path <- (dependencyClasspath in injectConfiguration).value) yield Seq("-java-lib", path.data.toString)).flatten ++
+              (for (path <- (managedClasspath in injectConfiguration).value) yield Seq("-java-lib", path.data.toString)).flatten ++
               haxeModules(in, (sourceDirectories in haxeConfiguration).value)
           (streams in haxeConfiguration).value.log.info(processBuilderXml.mkString("\"", "\" \"", "\""))
           processBuilderXml !< logger match {
