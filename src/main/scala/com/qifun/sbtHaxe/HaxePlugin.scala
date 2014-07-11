@@ -70,7 +70,8 @@ final object HaxePlugin extends Plugin {
                     haxeStreams,
                     target,
                     includes,
-                    scalaVersion.value) ++
+                    scalaVersion.value,
+                    haxeConfiguration.name) ++
                     (for {
                       path <- (dependencyClasspath in injectConfiguration).value
                       if path.data.toPath.toFile.exists
@@ -141,7 +142,8 @@ final object HaxePlugin extends Plugin {
                     haxeStreams,
                     target,
                     includes,
-                    scalaVersion.value) ++
+                    scalaVersion.value,
+                    haxeConfiguration.name) ++
                     (for (path <- (dependencyClasspath in injectConfiguration).value) yield {
                       Seq("-java-lib", path.data.toString)
                     }).flatten ++
@@ -263,7 +265,8 @@ final object HaxePlugin extends Plugin {
     taskStreams: TaskStreams,
     targetDirectory: RichFile,
     managedFiles: Seq[Attributed[File]],
-    scalaVersion: String) = {
+    scalaVersion: String,
+    configurationName: String) = {
     val dependSources = (for {
       dep <- depsClasspath
       if dep.data.toPath.toFile.exists
@@ -275,7 +278,7 @@ final object HaxePlugin extends Plugin {
       outStyle = FilesInfo.exists) { haxeJars: Set[File] =>
         for {
           haxeJar <- haxeJars
-          output <- IO.unzip(haxeJar, targetDirectory / "unpacked_haxe")
+          output <- IO.unzip(haxeJar, targetDirectory / (configurationName + "_unpacked_haxe"))
         } yield output
       }
     val (unpacking, rawIncludes) = managedFiles.partition { _.data.getName.endsWith(".jar") }
