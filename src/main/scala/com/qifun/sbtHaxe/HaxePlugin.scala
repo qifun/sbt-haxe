@@ -189,7 +189,7 @@ final object HaxePlugin extends Plugin {
             } yield sourcePath) ++ (for {
               ResolvedClasspathDependency(dep, _) <- buildDependencies.value.classpath(thisProjectRef.value)
               conf <- Classpaths.allConfigs(configuration.value)
-              sourceDirectories = (classDirectory in (dep, Compile)).get(settingsData.value)
+              sourceDirectories = (classDirectory in (dep, conf)).get(settingsData.value)
               directory <- sourceDirectories
             } yield directory)).classpath
           },
