@@ -74,7 +74,7 @@ final object HaxePlugin extends Plugin {
                     haxeConfiguration.name) ++
                     (for {
                       path <- (dependencyClasspath in injectConfiguration).value
-                      if path.data.toPath.toFile.exists
+                      if path.data.exists
                     } yield {
                       Seq("-java-lib", path.data.toString)
                     }).flatten ++
@@ -144,7 +144,10 @@ final object HaxePlugin extends Plugin {
                     includes,
                     scalaVersion.value,
                     haxeConfiguration.name) ++
-                    (for (path <- (dependencyClasspath in injectConfiguration).value) yield {
+                    (for {
+                      path <- (dependencyClasspath in injectConfiguration).value
+                      if path.data.exists
+                    } yield {
                       Seq("-java-lib", path.data.toString)
                     }).flatten ++
                     haxeModules(in, (sourceDirectories in haxeConfiguration).value)
@@ -269,7 +272,7 @@ final object HaxePlugin extends Plugin {
     configurationName: String) = {
     val dependSources = (for {
       dep <- depsClasspath
-      if dep.data.toPath.toFile.exists
+      if dep.data.exists
     } yield Seq("-cp", dep.data.toPath.toString)).flatten
 
     val unpack = FileFunction.cached(
