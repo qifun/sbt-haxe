@@ -112,12 +112,12 @@ final object HaxePlugin extends Plugin {
     dox in injectConfiguration := {
       val haxeStreams = (streams in haxeConfiguration).value
       val deps = (buildDependencies in haxeConfiguration).value.classpath((thisProjectRef in haxeConfiguration).value)
-      val sourcePathes = (sourceDirectories in Haxe).value
+      val sourcePathes = (sourceDirectories in haxeConfiguration).value
       val data = (settingsData in haxeConfiguration).value
       val target = (crossTarget in haxeConfiguration).value
-      val doxOutputDirectory = (crossTarget in haxeConfiguration).value / "doc"
+      val doxOutputDirectory = (crossTarget in haxeConfiguration).value / (haxeConfiguration.name + "_doc")
       val includes = (dependencyClasspath in haxeConfiguration).value
-
+      
       val cachedTranfer =
         FileFunction.cached(
           haxeStreams.cacheDirectory / ("dox_" + scalaVersion.value),
@@ -255,7 +255,8 @@ final object HaxePlugin extends Plugin {
         ivyConfigurations += TestHaxe,
         haxeSetting(TestHaxe, Test),
         sourceGenerators in Test <+= haxe in Test,
-        doxSetting(Haxe, Compile))
+        doxSetting(Haxe, Compile),
+        doxSetting(TestHaxe, Test))
 
   /**
    * Builds -cp xxx command-line options for haxe compile from dependent projects.
