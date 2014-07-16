@@ -115,7 +115,7 @@ final object HaxePlugin extends Plugin {
       val sourcePathes = (sourceDirectories in haxeConfiguration).value
       val data = (settingsData in haxeConfiguration).value
       val target = (crossTarget in haxeConfiguration).value
-      val doxOutputDirectory = (crossTarget in haxeConfiguration).value / (haxeConfiguration.name + "-dox")
+      val doxOutputDirectory = (crossTarget in haxeConfiguration).value / (injectConfiguration.name + "-dox")
       val includes = (dependencyClasspath in haxeConfiguration).value
       
       val cachedTranfer =
