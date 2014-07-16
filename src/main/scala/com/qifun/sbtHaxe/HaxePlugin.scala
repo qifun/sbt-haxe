@@ -270,7 +270,7 @@ final object HaxePlugin extends Plugin {
     targetDirectory: RichFile,
     managedFiles: Seq[Attributed[File]],
     scalaVersion: String,
-    configurationName: String) = {
+    configurationName: String): Seq[String] = {
     val dependSources = (for {
       dep <- depsClasspath
       if dep.data.exists
