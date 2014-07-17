@@ -9,6 +9,8 @@ import scala.Some
 
 final object HaxePlugin extends Plugin {
 
+  private val HaxeFileRegex = """^(.*)\.hx$""".r
+
   final val Haxe = config("haxe")
   final val TestHaxe = config("test-haxe") extend Haxe
 
@@ -300,22 +302,21 @@ final object HaxePlugin extends Plugin {
    * Build the Haxe module name according to the Haxe file name
    */
   private final def haxeModules(haxeSources: Set[File], parents: Seq[sbt.File]) = {
-    haxeSources.map { file =>
-      val relativePaths = for {
+    for {
+      haxeSource <- haxeSources
+      relativePaths = for {
         parent <- parents
-        relativePath <- file.relativeTo(parent)
+        relativePath <- haxeSource.relativeTo(parent)
       } yield relativePath
-      relativePaths match {
+      Seq(haxeBaseName) <- relativePaths match {
         case Seq(relativePath) =>
-          relativePath.toString.substring(
-            0,
-            relativePath.toString.lastIndexOf(".")).replace(System.getProperty("file.separator"), ".")
+          HaxeFileRegex.unapplySeq(relativePath.toString)
         case Seq() =>
-          throw new MessageOnlyException(raw"$file should be in one of source directories!")
+          throw new MessageOnlyException(raw"$haxeSource should be in one of source directories!")
         case _ =>
-          throw new MessageOnlyException(raw"$file should not be in multiple source directories!")
+          throw new MessageOnlyException(raw"$haxeSource should not be in multiple source directories!")
       }
-    }
+    } yield haxeBaseName.replace(System.getProperty("file.separator"), ".")
   }
 
   private final def haxelibIncludeFlags(projectSource: File, source: File): Seq[String] = {
