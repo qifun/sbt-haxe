@@ -279,7 +279,7 @@ final object HaxePlugin extends Plugin {
     } yield Seq("-cp", dep.data.toPath.toString)).flatten
 
     val unpack = FileFunction.cached(
-      taskStreams.cacheDirectory / ("unpacked_haxe_" + scalaVersion.value),
+      taskStreams.cacheDirectory / ("unpacked_haxe_" + scalaVersion),
       inStyle = FilesInfo.lastModified,
       outStyle = FilesInfo.exists) { haxeJars: Set[File] =>
         for {
