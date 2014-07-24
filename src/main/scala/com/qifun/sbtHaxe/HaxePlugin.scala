@@ -117,7 +117,7 @@ final object HaxePlugin extends Plugin {
       val sourcePathes = (sourceDirectories in haxeConfiguration).value
       val data = (settingsData in haxeConfiguration).value
       val target = (crossTarget in haxeConfiguration).value
-      val doxOutputDirectory = (crossTarget in haxeConfiguration).value / (injectConfiguration.name + "-dox")
+      val doxOutputDirectory = target / (injectConfiguration.name + "-dox")
       val includes = (dependencyClasspath in haxeConfiguration).value
       
       val cachedTranfer =
@@ -128,12 +128,14 @@ final object HaxePlugin extends Plugin {
             (streams in haxeConfiguration).value.log.info("Generating haxe document...")
             val logger = (streams in haxeConfiguration).value.log
             val sourceManagedValue = (sourceManaged in injectConfiguration).value
+            val haxeXmlDirectory = target / "haxe-xml"
+            haxeXmlDirectory.mkdirs()
             for (doxPlatform <- (doxPlatforms in injectConfiguration).value) {
               val processBuilderXml =
                 Seq[String](
                   (haxeCommand in injectConfiguration).value,
                   "-D", "doc-gen",
-                  "-xml", ((crossTarget in haxeConfiguration).value / raw"$doxPlatform.xml").toString,
+                  "-xml", (haxeXmlDirectory / raw"$doxPlatform.xml").toString,
                   raw"-$doxPlatform", "dummy", "--no-output") ++
                   (haxeOptions in injectConfiguration in dox).value ++
                   (for (sourcePath <- (sourceDirectories in haxeConfiguration).value) yield {
@@ -156,16 +158,16 @@ final object HaxePlugin extends Plugin {
               (streams in haxeConfiguration).value.log.info(processBuilderXml.mkString("\"", "\" \"", "\""))
               processBuilderXml !< logger match {
                 case 0 =>
-                  (streams in haxeConfiguration).value.log.debug("Generate java.xml success!")
+                  (streams in haxeConfiguration).value.log.debug(raw"Generate $doxPlatform.xml success!")
                 case result =>
-                  throw new MessageOnlyException("Generate java.xml fail: " + result)
+                  throw new MessageOnlyException("Generate $doxPlatform.xml fail: " + result)
               }
             }
 
             val processBuildDoc =
               Seq[String](
                 (haxelibCommand in injectConfiguration).value,
-                "run", "dox", "--input-path", (crossTarget in haxeConfiguration).value.toString,
+                "run", "dox", "--input-path", haxeXmlDirectory.toString,
                 "--output-path", doxOutputDirectory.getPath.toString) ++
                 (for (sourcePath <- sourcePathes) yield haxelibIncludeFlags(sourcePath, sourcePath)).flatten
             (streams in haxeConfiguration).value.log.info(processBuildDoc.mkString("\"", "\" \"", "\""))
