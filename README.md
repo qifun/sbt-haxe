@@ -68,3 +68,7 @@ YourHaxeClass.hx:6: Hello, World!
   * doxPlatforms
 
 See [src/main/scala/com/qifun/sbtHaxe/HaxePlugin.scala](https://bitbucket.org/qforce/sbt-haxe/src/master/src/main/scala/com/qifun/sbtHaxe/HaxePlugin.scala#cl-34) for more information.
+
+## Dependencies
+
+`sbt-haxe` requires Sbt 0.13, Haxe 3.1 and [Dox](http://lib.haxe.org/p/dox) 1.0.0.
