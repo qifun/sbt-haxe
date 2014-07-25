@@ -10,7 +10,7 @@ Add the following line to your `project/plugins.sbt`:
 
     addSbtPlugin("com.qifun" % "sbt-haxe" % "1.0.0")
 
-And add `pttrtSettings` to your `build.sbt`:
+And add `haxeSettings` to your `build.sbt`:
 
     haxeSettings
 
