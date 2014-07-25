@@ -71,4 +71,4 @@ See [src/main/scala/com/qifun/sbtHaxe/HaxePlugin.scala](https://bitbucket.org/qf
 
 ## Dependencies
 
-`sbt-haxe` requires Sbt 0.13, Haxe 3.1 and [Dox](http://lib.haxe.org/p/dox) 1.0.0.
+`sbt-haxe` requires Sbt 0.13, Haxe 3.1, [hxjava](http://lib.haxe.org/p/hxjava) 3.1.0 and [Dox](http://lib.haxe.org/p/dox) 1.0.0.
