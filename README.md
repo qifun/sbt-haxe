@@ -31,7 +31,6 @@ class YourHaxeClass
 
 ```
 $ sbt
-> 
 ```
 
 ### Step 4: Compile and run it!
