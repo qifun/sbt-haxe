@@ -54,3 +54,17 @@ Type :help for more information.
 scala> yourPackage.YourHaxeClass.main()
 YourHaxeClass.hx:6: Hello, World!
 ```
+
+## Tasks and settings
+
+`sbt-haxe` provides following tasks and settings:
+
+ * Tasks
+  * haxe
+  * dox
+ * Settings
+  * haxeCommand
+  * haxelibCommand
+  * doxPlatforms
+
+See [src/main/scala/com/qifun/sbtHaxe/HaxePlugin.scala](https://bitbucket.org/qforce/sbt-haxe/src/master/src/main/scala/com/qifun/sbtHaxe/HaxePlugin.scala#cl-34) for more information.
