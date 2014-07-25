@@ -27,31 +27,18 @@ class YourHaxeClass
 }
 ```
 
-### Step 3: Start Sbt
+### Step 3: Run it!
 
 ```
-$ sbt
-```
-
-### Step 4: Compile and run it!
-
-```
-> compile
-[info] Updating {file:/D:/Documents/sbt-haxe-test/}sbt-haxe-test...
-[info] Resolving org.fusesource.jansi#jansi;1.4 ...
-[info] Done updating.
-[info] "haxe" "-cp" "D:\Documents\sbt-haxe-test\src\haxe" "-cp" "D:\Documents\sbt-haxe-test\target\scala-2.10\src_managed\haxe" "-java-lib" "C:\Users\user\.sbt\boot\scala-2.10.3\lib\scala-library.jar" "-java" "D:\cygwin\tmp\sbt_71654c88" "-D" "no-compilation" "yourPackage.YourHaxeClass"
-[info] Compiling 29 Java sources to D:\Documents\sbt-haxe-test\target\scala-2.10\classes...
-[success] Total time: 2 s, completed 2014-7-25 9:23:25
-> console
-[info] Starting scala interpreter...
-[info]
-Welcome to Scala version 2.10.3 (Java HotSpot(TM) 64-Bit Server VM, Java 1.7.0_45).
-Type in expressions to have them evaluated.
-Type :help for more information.
-
-scala> yourPackage.YourHaxeClass.main()
-YourHaxeClass.hx:6: Hello, World!
+$ sbt run
+[info] Loading global plugins from C:\Users\user\.sbt\0.13\plugins
+[info] Loading project definition from D:\Documents\sbt-haxe-test\project
+[info] Set current project to sbt-haxe-test (in build file:/D:/Documents/sbt-haxe-test/)
+[info] "haxe" "-cp" "D:\Documents\sbt-haxe-test\src\haxe" "-cp" "D:\Documents\sbt-haxe-test\target\scala-2.10\src_managed\haxe" "-java-lib" "C:\Users\user\.sbt\boot\scala-2.10.3\lib\scala-library.jar" "-java" "D:\cygwin\tmp\sbt_97a26bd9" "-D" "no-compilation" "yourPackage.YourHaxeClass"
+[info] Compiling 1 Java source to D:\Documents\sbt-haxe-test\target\scala-2.10\classes...
+[info] Running yourPackage.YourHaxeClass
+YourHaxeClass.hx:7: Hello, World!
+[success] Total time: 1 s, completed 2014-7-25 10:00:23
 ```
 
 ## Tasks and settings
