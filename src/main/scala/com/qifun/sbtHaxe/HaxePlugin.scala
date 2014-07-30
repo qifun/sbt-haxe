@@ -28,8 +28,8 @@ final object HaxePlugin extends Plugin {
 
   private val HaxeFileRegex = """^(.*)\.hx$""".r
 
-  final val Haxe = config("haxe")
-  final val TestHaxe = config("test-haxe") extend Haxe
+  final val HaxeJava = config("haxe")
+  final val TestHaxeJava = config("test-haxe") extend HaxeJava
 
   final val haxeOptions = SettingKey[Seq[String]]("haxe-options", "Additional command-line options for Haxe compiler.")
   final val haxeCommand = SettingKey[String]("haxe-command", "The Haxe executable.")
@@ -269,18 +269,18 @@ final object HaxePlugin extends Plugin {
   }
 
   final val haxeSettings =
-    sbt.addArtifact(artifact in packageBin in Haxe, packageBin in Haxe) ++
-      inConfig(Haxe)(baseHaxeSettings) ++
-      inConfig(TestHaxe)(baseHaxeSettings) ++
+    sbt.addArtifact(artifact in packageBin in HaxeJava, packageBin in HaxeJava) ++
+      inConfig(HaxeJava)(baseHaxeSettings) ++
+      inConfig(TestHaxeJava)(baseHaxeSettings) ++
       Seq(
-        ivyConfigurations += Haxe,
-        haxeSetting(Haxe, Compile),
+        ivyConfigurations += HaxeJava,
+        haxeSetting(HaxeJava, Compile),
         sourceGenerators in Compile <+= haxe in Compile,
-        ivyConfigurations += TestHaxe,
-        haxeSetting(TestHaxe, Test),
+        ivyConfigurations += TestHaxeJava,
+        haxeSetting(TestHaxeJava, Test),
         sourceGenerators in Test <+= haxe in Test,
-        doxSetting(Haxe, Compile),
-        doxSetting(TestHaxe, Test))
+        doxSetting(HaxeJava, Compile),
+        doxSetting(TestHaxeJava, Test))
 
   /**
    * Builds -cp xxx command-line options for haxe compile from dependent projects.
