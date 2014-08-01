@@ -23,10 +23,14 @@ import sbt._
 import java.io.File
 import java.nio.file.Path
 import scala.Some
+import java.util.regex.Pattern
 
 final object HaxePlugin extends Plugin {
 
   private val HaxeFileRegex = """^(.*)\.hx$""".r
+
+  private val warningPattern = "^(.*)\\s:\\sWarning\\s:\\s(.*)$"
+  private val pattern = Pattern.compile(warningPattern);
 
   final val Haxe = config("haxe")
   final val TestHaxe = config("test-haxe") extend Haxe
@@ -110,7 +114,20 @@ final object HaxePlugin extends Plugin {
               val sourceManagedValue = (sourceManaged in injectConfiguration).value
               val logger = (streams in haxeConfiguration).value.log
               IO.delete(sourceManagedValue)
-              processBuilder !< logger match {
+              class HaxeProcessLogger extends ProcessLogger {
+                def info(s: => String): Unit = logger.info(s)
+                def error(s: => String): Unit = {
+                  val matcher = pattern.matcher(s)
+                  if (matcher.find()) {
+                    logger.warn(s)
+                  } else {
+                    logger.error(s)
+                  }
+                }
+                def buffer[T](f: => T): T = f
+              }
+              val haxeLogger = new HaxeProcessLogger
+              processBuilder !< haxeLogger match {
                 case 0 => {
                   val temporarySrc = temporaryDirectory / "src"
                   val moveMapping = (temporaryDirectory ** (globFilter("*.java") | globFilter("*.cs"))) pair {
