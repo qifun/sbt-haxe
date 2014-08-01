@@ -109,6 +109,7 @@ final object HaxePlugin extends Plugin {
               (streams in haxeConfiguration).value.log.info(processBuilder.mkString("\"", "\" \"", "\""))
               val sourceManagedValue = (sourceManaged in injectConfiguration).value
               val logger = (streams in haxeConfiguration).value.log
+              IO.delete(sourceManagedValue)
               processBuilder !< logger match {
                 case 0 => {
                   val temporarySrc = temporaryDirectory / "src"
