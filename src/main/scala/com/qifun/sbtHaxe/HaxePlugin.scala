@@ -105,6 +105,7 @@ final object HaxePlugin extends Plugin {
                     }).flatten ++
                     outputFlag(haxeConfiguration, temporaryDirectory) ++
                     (haxeOptions in injectConfiguration in haxe).value ++
+                    (haxeOptions in haxeConfiguration in haxe).value ++
                     haxeModules(in, (sourceDirectories in haxeConfiguration).value)
               (streams in haxeConfiguration).value.log.info(processBuilder.mkString("\"", "\" \"", "\""))
               val sourceManagedValue = (sourceManaged in injectConfiguration).value
@@ -160,6 +161,7 @@ final object HaxePlugin extends Plugin {
                   "-xml", (haxeXmlDirectory / raw"$doxPlatform.xml").toString,
                   raw"-$doxPlatform", "dummy", "--no-output") ++
                   (haxeOptions in injectConfiguration in dox).value ++
+                  (haxeOptions in haxeConfiguration in dox).value ++
                   (for (sourcePath <- (sourceDirectories in haxeConfiguration).value) yield {
                     Seq("-cp", sourcePath.getPath.toString)
                   }).flatten ++
