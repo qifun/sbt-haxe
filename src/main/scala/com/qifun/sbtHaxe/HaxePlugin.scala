@@ -30,13 +30,10 @@ final object HaxePlugin extends Plugin {
 
   final val Haxe = config("haxe")
   final val TestHaxe = config("test-haxe") extend Haxe
-
   final val HaxeJava = config("haxe-java") extend Haxe
   final val TestHaxeJava = config("test-haxe-java") extend HaxeJava
-
   final val CSharp = config("csharp")
   final val TestCSharp = config("test-csharp") extend CSharp
-
   final val HaxeCSharp = config("haxe-csharp") extend Haxe
   final val TestHaxeCSharp = config("test-haxe-csharp") extend HaxeCSharp
 
@@ -293,17 +290,13 @@ final object HaxePlugin extends Plugin {
       inConfig(TestHaxeJava)(extendSettings) ++
       Seq(
         ivyConfigurations += Haxe,
-
         ivyConfigurations += TestHaxe,
-
         ivyConfigurations += HaxeJava,
         haxeSetting(HaxeJava, Compile),
         sourceGenerators in Compile <+= haxe in Compile,
-
         ivyConfigurations += TestHaxeJava,
         haxeSetting(TestHaxeJava, Test),
         sourceGenerators in Test <+= haxe in Test,
-
         doxSetting(HaxeJava, Compile),
         doxSetting(TestHaxeJava, Test))
 
@@ -319,17 +312,13 @@ final object HaxePlugin extends Plugin {
       inConfig(TestHaxeCSharp)(extendSettings) ++
       Seq(
         ivyConfigurations += Haxe,
-
         ivyConfigurations += TestHaxe,
-
         ivyConfigurations += HaxeCSharp,
         haxeSetting(HaxeCSharp, CSharp),
         sourceGenerators in CSharp <+= haxe in CSharp,
-
         ivyConfigurations += TestHaxeCSharp,
         haxeSetting(TestHaxeCSharp, TestCSharp),
         sourceGenerators in TestCSharp <+= haxe in TestCSharp,
-
         doxSetting(HaxeJava, Compile),
         doxSetting(TestHaxeJava, Test))
 
