@@ -40,7 +40,7 @@ final object HaxePlugin extends Plugin {
   final val haxeOptions = SettingKey[Seq[String]]("haxe-options", "Additional command-line options for Haxe compiler.")
   final val haxeCommand = SettingKey[String]("haxe-command", "The Haxe executable.")
   final val haxelibCommand = SettingKey[String]("haxeilb-command", "The haxelib executable")
-  final val haxe = TaskKey[Seq[File]]("haxe", "Convert Haxe source code to Java.")
+  final val haxe = TaskKey[Seq[File]]("haxe", "Convert Haxe source code to Java or C#.")
   final val dox = TaskKey[Seq[File]]("dox", "Generate Haxe documentation.")
   final val doxPlatforms =
     SettingKey[Seq[String]]("dox-platforms", "The platforms that Haxe documentation is generated for.")
