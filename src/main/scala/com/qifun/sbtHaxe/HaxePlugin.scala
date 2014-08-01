@@ -30,6 +30,12 @@ final object HaxePlugin extends Plugin {
 
   final val Haxe = config("haxe")
   final val TestHaxe = config("test-haxe") extend Haxe
+  final val HaxeJava = config("haxe-java") extend Haxe
+  final val TestHaxeJava = config("test-haxe-java") extend HaxeJava
+  final val CSharp = config("csharp")
+  final val TestCSharp = config("test-csharp") extend CSharp
+  final val HaxeCSharp = config("haxe-csharp") extend Haxe
+  final val TestHaxeCSharp = config("test-haxe-csharp") extend HaxeCSharp
 
   final val haxeOptions = SettingKey[Seq[String]]("haxe-options", "Additional command-line options for Haxe compiler.")
   final val haxeCommand = SettingKey[String]("haxe-command", "The Haxe executable.")
@@ -97,17 +103,16 @@ final object HaxePlugin extends Plugin {
                     } yield {
                       Seq("-java-lib", path.data.toString)
                     }).flatten ++
-                    Seq("-java", temporaryDirectory.getPath,
-                      "-D", "no-compilation") ++
-                      (haxeOptions in injectConfiguration in haxe).value ++
-                      haxeModules(in, (sourceDirectories in haxeConfiguration).value)
+                    outputFlag(haxeConfiguration, temporaryDirectory) ++
+                    (haxeOptions in haxeConfiguration in haxe).value ++
+                    haxeModules(in, (sourceDirectories in haxeConfiguration).value)
               (streams in haxeConfiguration).value.log.info(processBuilder.mkString("\"", "\" \"", "\""))
               val sourceManagedValue = (sourceManaged in injectConfiguration).value
               val logger = (streams in haxeConfiguration).value.log
               processBuilder !< logger match {
                 case 0 => {
                   val temporarySrc = temporaryDirectory / "src"
-                  val moveMapping = (temporaryDirectory ** globFilter("*.java")) pair {
+                  val moveMapping = (temporaryDirectory ** (globFilter("*.java") | globFilter("*.cs"))) pair {
                     _.relativeTo(temporarySrc).map {
                       sourceManagedValue / _.getPath
                     }
@@ -136,7 +141,7 @@ final object HaxePlugin extends Plugin {
       val target = (crossTarget in haxeConfiguration).value
       val doxOutputDirectory = target / (injectConfiguration.name + "-dox")
       val includes = (dependencyClasspath in haxeConfiguration).value
-      
+
       val cachedTranfer =
         FileFunction.cached(
           haxeStreams.cacheDirectory / ("dox_" + scalaVersion.value),
@@ -154,7 +159,7 @@ final object HaxePlugin extends Plugin {
                   "-D", "doc-gen",
                   "-xml", (haxeXmlDirectory / raw"$doxPlatform.xml").toString,
                   raw"-$doxPlatform", "dummy", "--no-output") ++
-                  (haxeOptions in injectConfiguration in dox).value ++
+                  (haxeOptions in haxeConfiguration in dox).value ++
                   (for (sourcePath <- (sourceDirectories in haxeConfiguration).value) yield {
                     Seq("-cp", sourcePath.getPath.toString)
                   }).flatten ++
@@ -239,6 +244,13 @@ final object HaxePlugin extends Plugin {
           unmanagedSourceDirectories := Seq(sourceDirectory.value),
           includeFilter in unmanagedSources := "*.hx")
 
+  final val extendSettings =
+    Seq(
+      unmanagedSourceDirectories :=
+        unmanagedSourceDirectories.value ++ (unmanagedSourceDirectories in Haxe).value,
+      managedSourceDirectories :=
+        managedSourceDirectories.value ++ (managedSourceDirectories in Haxe).value)
+
   private final def buildInternalDependencyClasspath(
     projectRef: ProjectRef,
     configuration: Configuration,
@@ -268,19 +280,59 @@ final object HaxePlugin extends Plugin {
     }
   }
 
-  final val haxeSettings =
-    sbt.addArtifact(artifact in packageBin in Haxe, packageBin in Haxe) ++
+  final val haxeJavaSettings =
+    sbt.addArtifact(artifact in packageBin in HaxeJava, packageBin in HaxeJava) ++
       inConfig(Haxe)(baseHaxeSettings) ++
       inConfig(TestHaxe)(baseHaxeSettings) ++
+      inConfig(HaxeJava)(baseHaxeSettings) ++
+      inConfig(HaxeJava)(extendSettings) ++
+      inConfig(TestHaxeJava)(baseHaxeSettings) ++
+      inConfig(TestHaxeJava)(extendSettings) ++
       Seq(
         ivyConfigurations += Haxe,
-        haxeSetting(Haxe, Compile),
-        sourceGenerators in Compile <+= haxe in Compile,
         ivyConfigurations += TestHaxe,
-        haxeSetting(TestHaxe, Test),
+        ivyConfigurations += HaxeJava,
+        haxeSetting(HaxeJava, Compile),
+        sourceGenerators in Compile <+= haxe in Compile,
+        ivyConfigurations += TestHaxeJava,
+        haxeSetting(TestHaxeJava, Test),
         sourceGenerators in Test <+= haxe in Test,
-        doxSetting(Haxe, Compile),
-        doxSetting(TestHaxe, Test))
+        doxSetting(HaxeJava, Compile),
+        doxSetting(TestHaxeJava, Test))
+
+  final val haxeCSharpSettings =
+    sbt.addArtifact(artifact in packageBin in HaxeJava, packageBin in HaxeJava) ++
+      inConfig(Haxe)(baseHaxeSettings) ++
+      inConfig(TestHaxe)(baseHaxeSettings) ++
+      inConfig(CSharp)(baseHaxeSettings) ++
+      inConfig(TestCSharp)(baseHaxeSettings) ++
+      inConfig(HaxeCSharp)(baseHaxeSettings) ++
+      inConfig(HaxeCSharp)(extendSettings) ++
+      inConfig(TestHaxeCSharp)(baseHaxeSettings) ++
+      inConfig(TestHaxeCSharp)(extendSettings) ++
+      Seq(
+        ivyConfigurations += Haxe,
+        ivyConfigurations += TestHaxe,
+        ivyConfigurations += HaxeCSharp,
+        haxeSetting(HaxeCSharp, CSharp),
+        sourceGenerators in CSharp <+= haxe in CSharp,
+        ivyConfigurations += TestHaxeCSharp,
+        haxeSetting(TestHaxeCSharp, TestCSharp),
+        sourceGenerators in TestCSharp <+= haxe in TestCSharp,
+        doxSetting(HaxeJava, Compile),
+        doxSetting(TestHaxeJava, Test))
+
+  private final def outputFlag(languageConfiguration: Configuration, temporaryDirectory: File): Seq[String] = {
+    if (languageConfiguration == HaxeJava | languageConfiguration == TestHaxeJava) {
+      Seq("-java", temporaryDirectory.getPath,
+        "-D", "no-compilation")
+    } else if (languageConfiguration == HaxeCSharp | languageConfiguration == TestHaxeCSharp) {
+      Seq("-cs", temporaryDirectory.getPath,
+        "-D", "no-compilation")
+    } else {
+      Seq()
+    }
+  }
 
   /**
    * Builds -cp xxx command-line options for haxe compile from dependent projects.
