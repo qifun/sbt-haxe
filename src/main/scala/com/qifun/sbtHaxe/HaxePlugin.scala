@@ -29,8 +29,7 @@ final object HaxePlugin extends Plugin {
 
   private val HaxeFileRegex = """^(.*)\.hx$""".r
 
-  private val warningPattern = "^(.*)\\s:\\sWarning\\s:\\s(.*)$"
-  private val pattern = Pattern.compile(warningPattern);
+  private val WarningRegex = """^(.*)\s:\sWarning\s:\s(.*)$""".r
 
   final val Haxe = config("haxe")
   final val TestHaxe = config("test-haxe") extend Haxe
@@ -108,7 +107,7 @@ final object HaxePlugin extends Plugin {
                       Seq("-java-lib", path.data.toString)
                     }).flatten ++
                     outputFlag(haxeConfiguration, temporaryDirectory) ++
-                    (haxeOptions in haxeConfiguration in haxe).value ++
+                    (haxeOptions in injectConfiguration in haxe).value ++
                     haxeModules(in, (sourceDirectories in haxeConfiguration).value)
               (streams in haxeConfiguration).value.log.info(processBuilder.mkString("\"", "\" \"", "\""))
               val sourceManagedValue = (sourceManaged in injectConfiguration).value
@@ -117,8 +116,7 @@ final object HaxePlugin extends Plugin {
               class HaxeProcessLogger extends ProcessLogger {
                 def info(s: => String): Unit = logger.info(s)
                 def error(s: => String): Unit = {
-                  val matcher = pattern.matcher(s)
-                  if (matcher.find()) {
+                  if (WarningRegex.findAllIn(s).hasNext) {
                     logger.warn(s)
                   } else {
                     logger.error(s)
@@ -177,7 +175,7 @@ final object HaxePlugin extends Plugin {
                   "-D", "doc-gen",
                   "-xml", (haxeXmlDirectory / raw"$doxPlatform.xml").toString,
                   raw"-$doxPlatform", "dummy", "--no-output") ++
-                  (haxeOptions in haxeConfiguration in dox).value ++
+                  (haxeOptions in injectConfiguration in dox).value ++
                   (for (sourcePath <- (sourceDirectories in haxeConfiguration).value) yield {
                     Seq("-cp", sourcePath.getPath.toString)
                   }).flatten ++
@@ -269,6 +267,13 @@ final object HaxePlugin extends Plugin {
       managedSourceDirectories :=
         managedSourceDirectories.value ++ (managedSourceDirectories in Haxe).value)
 
+  final val extendTestSettings =
+    Seq(
+      unmanagedSourceDirectories :=
+        unmanagedSourceDirectories.value ++ (unmanagedSourceDirectories in TestHaxe).value,
+      managedSourceDirectories :=
+        managedSourceDirectories.value ++ (managedSourceDirectories in TestHaxe).value)
+
   private final def buildInternalDependencyClasspath(
     projectRef: ProjectRef,
     configuration: Configuration,
@@ -305,7 +310,7 @@ final object HaxePlugin extends Plugin {
       inConfig(HaxeJava)(baseHaxeSettings) ++
       inConfig(HaxeJava)(extendSettings) ++
       inConfig(TestHaxeJava)(baseHaxeSettings) ++
-      inConfig(TestHaxeJava)(extendSettings) ++
+      inConfig(TestHaxeJava)(extendTestSettings) ++
       Seq(
         ivyConfigurations += Haxe,
         ivyConfigurations += TestHaxe,
@@ -327,7 +332,7 @@ final object HaxePlugin extends Plugin {
       inConfig(HaxeCSharp)(baseHaxeSettings) ++
       inConfig(HaxeCSharp)(extendSettings) ++
       inConfig(TestHaxeCSharp)(baseHaxeSettings) ++
-      inConfig(TestHaxeCSharp)(extendSettings) ++
+      inConfig(TestHaxeCSharp)(extendTestSettings) ++
       Seq(
         ivyConfigurations += Haxe,
         ivyConfigurations += TestHaxe,
