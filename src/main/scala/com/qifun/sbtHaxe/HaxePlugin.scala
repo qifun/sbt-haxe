@@ -94,7 +94,6 @@ final object HaxePlugin extends Plugin {
                     Seq("-cp", sourcePath.getPath.toString)
                   }).flatten ++
                   projectPathFlags(
-                    (internalDependencyClasspath in haxeConfiguration).value,
                     haxeStreams,
                     target,
                     includes,
@@ -180,7 +179,6 @@ final object HaxePlugin extends Plugin {
                     Seq("-cp", sourcePath.getPath.toString)
                   }).flatten ++
                   projectPathFlags(
-                    (internalDependencyClasspath in haxeConfiguration).value,
                     haxeStreams,
                     target,
                     includes,
@@ -361,35 +359,35 @@ final object HaxePlugin extends Plugin {
    * Builds -cp xxx command-line options for haxe compile from dependent projects.
    */
   private final def projectPathFlags(
-    depsClasspath: Classpath,
     taskStreams: TaskStreams,
     targetDirectory: RichFile,
-    managedFiles: Seq[Attributed[File]],
+    depsClasspath: Seq[Attributed[File]],
     scalaVersion: String,
     configurationName: String): Seq[String] = {
-    val dependSources = (for {
-      dep <- depsClasspath
-      if dep.data.exists
-    } yield Seq("-cp", dep.data.toPath.toString)).flatten
-
     val unpack = FileFunction.cached(
       taskStreams.cacheDirectory / ("unpacked_haxe_" + scalaVersion),
       inStyle = FilesInfo.lastModified,
       outStyle = FilesInfo.exists) { haxeJars: Set[File] =>
         for {
           haxeJar <- haxeJars
-          output <- IO.unzip(haxeJar, targetDirectory / (configurationName + "_unpacked_haxe"))
+          output <- IO.unzip(haxeJar, targetDirectory / (configurationName + "_unpacked_haxe") / haxeJar.getName)
         } yield output
       }
-    val (unpacking, rawIncludes) = managedFiles.partition { _.data.getName.endsWith(".jar") }
+    val (unpacking, rawIncludes) = depsClasspath.partition { _.data.getPath.endsWith(".jar") }
     val unpacked = unpack(unpacking.map { _.data }(collection.breakOut))
-    val unpackedHaxe = if (unpacked.isEmpty) {
-      Nil
-    } else {
-      Seq("-cp", (targetDirectory / "unpacked_haxe").getPath)
-    }
-
-    dependSources ++ unpackedHaxe
+    val directories = (for {
+      haxeJar <- unpacking
+    } yield targetDirectory / (configurationName + "_unpacked_haxe") / haxeJar.data.getName) ++ depsClasspath.map(_.data)
+    val dependSources = (for {
+      dep <- directories
+      if dep.exists
+    } yield Seq("-cp", dep.getPath)).flatten
+    val extraParamsHxmls = (for {
+      dep <- directories
+      extraParamsHxmlFile = dep / "extraParams.hxml"
+      if extraParamsHxmlFile.exists
+    } yield Seq("-cp", extraParamsHxmlFile.getPath)).flatten
+    dependSources ++ extraParamsHxmls
   }
 
   /**
