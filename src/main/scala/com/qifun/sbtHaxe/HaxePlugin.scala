@@ -265,14 +265,18 @@ final object HaxePlugin extends Plugin {
       unmanagedSourceDirectories :=
         unmanagedSourceDirectories.value ++ (unmanagedSourceDirectories in Haxe).value,
       managedSourceDirectories :=
-        managedSourceDirectories.value ++ (managedSourceDirectories in Haxe).value)
+        managedSourceDirectories.value ++ (managedSourceDirectories in Haxe).value,
+      sourceGenerators :=
+        sourceGenerators.value ++ (sourceGenerators in Haxe).value)
 
   final val extendTestSettings =
     Seq(
       unmanagedSourceDirectories :=
         unmanagedSourceDirectories.value ++ (unmanagedSourceDirectories in TestHaxe).value,
       managedSourceDirectories :=
-        managedSourceDirectories.value ++ (managedSourceDirectories in TestHaxe).value)
+        managedSourceDirectories.value ++ (managedSourceDirectories in TestHaxe).value,
+      sourceGenerators :=
+        sourceGenerators.value ++ (sourceGenerators in TestHaxe).value)
 
   private final def buildInternalDependencyClasspath(
     projectRef: ProjectRef,
