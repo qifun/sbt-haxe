@@ -12,7 +12,7 @@ scalacOptions += "-feature"
 
 version := "1.1.0-SNAPSHOT"
 
-CrossBuilding.crossSbtVersions := Seq("0.13")
+CrossBuilding.crossSbtVersions := Seq("0.13.5")
 
 description := "The rubost asynchronous programming facility for Scala that offers a direct API for working with Futures."
 
