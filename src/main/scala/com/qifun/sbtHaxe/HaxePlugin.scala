@@ -196,7 +196,7 @@ final object HaxePlugin extends Plugin {
                 case 0 =>
                   (streams in haxeConfiguration).value.log.debug(raw"Generate $doxPlatform.xml success!")
                 case result =>
-                  throw new MessageOnlyException("Generate $doxPlatform.xml fail: " + result)
+                  throw new MessageOnlyException(raw"Generate $doxPlatform.xml fail: " + result)
               }
             }
 
