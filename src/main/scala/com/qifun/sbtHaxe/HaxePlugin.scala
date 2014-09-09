@@ -86,7 +86,7 @@ final object HaxePlugin extends Plugin {
             IO.withTemporaryDirectory { temporaryDirectory =>
               val deps =
                 (buildDependencies in haxeConfiguration).value.classpath((thisProjectRef in haxeConfiguration).value)
-
+                
               val processBuilder =
                 Seq[String](
                   (haxeCommand in injectConfiguration).value) ++
@@ -106,7 +106,7 @@ final object HaxePlugin extends Plugin {
                       Seq("-java-lib", path.data.toString)
                     }).flatten ++
                     outputFlag(haxeConfiguration, temporaryDirectory) ++
-                    (haxeOptions in injectConfiguration in haxe).value ++
+                    (haxeOptions in ThisBuild in injectConfiguration in haxe).value ++
                     haxeModules(in, (sourceDirectories in haxeConfiguration).value)
               (streams in haxeConfiguration).value.log.info(processBuilder.mkString("\"", "\" \"", "\""))
               val sourceManagedValue = (sourceManaged in injectConfiguration).value
@@ -174,7 +174,7 @@ final object HaxePlugin extends Plugin {
                   "-D", "doc-gen",
                   "-xml", (haxeXmlDirectory / raw"$doxPlatform.xml").toString,
                   raw"-$doxPlatform", "dummy", "--no-output") ++
-                  (haxeOptions in injectConfiguration in dox).value ++
+                  (haxeOptions in ThisBuild in injectConfiguration in dox).value ++
                   (for (sourcePath <- (sourceDirectories in haxeConfiguration).value) yield {
                     Seq("-cp", sourcePath.getPath.toString)
                   }).flatten ++
