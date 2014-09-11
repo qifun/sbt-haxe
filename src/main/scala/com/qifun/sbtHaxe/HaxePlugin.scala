@@ -52,8 +52,7 @@ final object HaxePlugin extends Plugin {
     super.globalSettings ++ Seq(
       doxPlatforms := Seq("java"),
       haxeCommand := "haxe",
-      haxelibCommand := "haxelib",
-      haxeOptions := Seq())
+      haxelibCommand := "haxelib")
 
   /**
    *  默认的[[haxe]]任务设置值。
@@ -305,6 +304,18 @@ final object HaxePlugin extends Plugin {
     }
   }
 
+  final def injectSettings(
+    haxeConfiguration: Configuration,
+    injectConfiguration: Configuration) = {
+    Seq(
+      haxeOptions in injectConfiguration := Nil,
+      haxeSetting(haxeConfiguration, injectConfiguration),
+      haxeOptions in injectConfiguration in haxe := (haxeOptions in injectConfiguration).value,
+      doxSetting(haxeConfiguration, injectConfiguration),
+      haxeOptions in injectConfiguration in dox := (haxeOptions in injectConfiguration).value,
+      sourceGenerators in injectConfiguration <+= haxe in injectConfiguration)
+  }
+
   final val haxeJavaSettings =
     sbt.addArtifact(artifact in packageBin in HaxeJava, packageBin in HaxeJava) ++
       inConfig(Haxe)(baseHaxeSettings) ++
@@ -313,17 +324,12 @@ final object HaxePlugin extends Plugin {
       inConfig(HaxeJava)(extendSettings) ++
       inConfig(TestHaxeJava)(baseHaxeSettings) ++
       inConfig(TestHaxeJava)(extendTestSettings) ++
+      injectSettings(HaxeJava, Compile) ++
+      injectSettings(TestHaxeJava, Test) ++
       Seq(
         ivyConfigurations += Haxe,
         ivyConfigurations += TestHaxe,
-        ivyConfigurations += HaxeJava,
-        haxeSetting(HaxeJava, Compile),
-        sourceGenerators in Compile <+= haxe in Compile,
-        ivyConfigurations += TestHaxeJava,
-        haxeSetting(TestHaxeJava, Test),
-        sourceGenerators in Test <+= haxe in Test,
-        doxSetting(HaxeJava, Compile),
-        doxSetting(TestHaxeJava, Test))
+        ivyConfigurations += HaxeJava)
 
   final val haxeCSharpSettings =
     sbt.addArtifact(artifact in packageBin in HaxeJava, packageBin in HaxeJava) ++
@@ -335,17 +341,12 @@ final object HaxePlugin extends Plugin {
       inConfig(HaxeCSharp)(extendSettings) ++
       inConfig(TestHaxeCSharp)(baseHaxeSettings) ++
       inConfig(TestHaxeCSharp)(extendTestSettings) ++
+      injectSettings(HaxeCSharp, CSharp) ++
+      injectSettings(TestHaxeCSharp, TestCSharp) ++
       Seq(
         ivyConfigurations += Haxe,
         ivyConfigurations += TestHaxe,
-        ivyConfigurations += HaxeCSharp,
-        haxeSetting(HaxeCSharp, CSharp),
-        sourceGenerators in CSharp <+= haxe in CSharp,
-        ivyConfigurations += TestHaxeCSharp,
-        haxeSetting(TestHaxeCSharp, TestCSharp),
-        sourceGenerators in TestCSharp <+= haxe in TestCSharp,
-        doxSetting(HaxeJava, Compile),
-        doxSetting(TestHaxeJava, Test))
+        ivyConfigurations += HaxeCSharp)
 
   private final def outputFlag(languageConfiguration: Configuration, temporaryDirectory: File): Seq[String] = {
     if (languageConfiguration == HaxeJava | languageConfiguration == TestHaxeJava) {
