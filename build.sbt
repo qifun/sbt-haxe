@@ -10,7 +10,7 @@ scalacOptions += "-deprecation"
 
 scalacOptions += "-feature"
 
-version := "1.1.0-SNAPSHOT"
+version := "1.1.0"
 
 CrossBuilding.crossSbtVersions := Seq("0.13.5")
 
