@@ -265,7 +265,7 @@ final object HaxePlugin extends Plugin {
               } yield sourcePath)).classpath
           },
           unmanagedSourceDirectories := Seq(sourceDirectory.value),
-          includeFilter in unmanagedSources := "*.hx")
+          includeFilter in unmanagedSources := new FileFilter { override final def accept(file: File) = file.isFile })
 
   final val extendSettings =
     Seq(
