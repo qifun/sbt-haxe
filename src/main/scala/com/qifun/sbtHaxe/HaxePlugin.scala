@@ -76,6 +76,7 @@ final object HaxePlugin extends Plugin {
       val haxeStreams = (streams in haxeConfiguration).value
       val data = (settingsData in haxeConfiguration).value
       val target = (crossTarget in haxeConfiguration).value
+      val sourceManagedValue = (sourceManaged in injectConfiguration).value
 
       val cachedTranfer =
         FileFunction.cached(
@@ -104,11 +105,10 @@ final object HaxePlugin extends Plugin {
                     } yield {
                       Seq("-java-lib", path.data.toString)
                     }).flatten ++
-                    outputFlag(haxeConfiguration, temporaryDirectory) ++
+                    outputFlag(haxeConfiguration, temporaryDirectory, sourceManagedValue) ++
                     (haxeOptions in injectConfiguration in haxe).value ++
                     haxeModules(in, (sourceDirectories in haxeConfiguration).value)
               (streams in haxeConfiguration).value.log.info(processBuilder.mkString("\"", "\" \"", "\""))
-              val sourceManagedValue = (sourceManaged in injectConfiguration).value
               val logger = (streams in haxeConfiguration).value.log
               IO.delete(sourceManagedValue)
               class HaxeProcessLogger extends ProcessLogger {
@@ -125,14 +125,20 @@ final object HaxePlugin extends Plugin {
               val haxeLogger = new HaxeProcessLogger
               processBuilder !< haxeLogger match {
                 case 0 => {
-                  val temporarySrc = temporaryDirectory / "src"
-                  val moveMapping = (temporaryDirectory ** (globFilter("*.java") | globFilter("*.cs"))) pair {
-                    _.relativeTo(temporarySrc).map {
-                      sourceManagedValue / _.getPath
+                  (haxeConfiguration == HaxeJava || haxeConfiguration == TestHaxeJava) match {
+                    case true => {
+                      val temporarySrc = temporaryDirectory / "src"
+                      val moveMapping = (temporaryDirectory ** (globFilter("*.java"))) pair {
+                        _.relativeTo(temporarySrc).map {
+                          sourceManagedValue / _.getPath
+                        }
+                      }
+                      IO.move(moveMapping)
+                      moveMapping.map { _._2 }(collection.breakOut)
                     }
+                    case _ =>
+                      Seq[File]().toSet
                   }
-                  IO.move(moveMapping)
-                  moveMapping.map { _._2 }(collection.breakOut)
                 }
                 case result => {
                   throw new MessageOnlyException("haxe returns " + result)
@@ -304,11 +310,16 @@ final object HaxePlugin extends Plugin {
     }
   }
 
+  override final def projectSettings = super.projectSettings ++ Seq(
+    haxeOptions in CSharp := Nil,
+    haxeOptions in TestCSharp := Nil,
+    haxeOptions in Compile := Nil,
+    haxeOptions in Test := Nil)
+
   final def injectSettings(
     haxeConfiguration: Configuration,
     injectConfiguration: Configuration) = {
     Seq(
-      haxeOptions in injectConfiguration := Nil,
       haxeSetting(haxeConfiguration, injectConfiguration),
       haxeOptions in injectConfiguration in haxe := (haxeOptions in injectConfiguration).value,
       doxSetting(haxeConfiguration, injectConfiguration),
@@ -348,13 +359,15 @@ final object HaxePlugin extends Plugin {
         ivyConfigurations += TestHaxe,
         ivyConfigurations += HaxeCSharp)
 
-  private final def outputFlag(languageConfiguration: Configuration, temporaryDirectory: File): Seq[String] = {
+  private final def outputFlag(
+    languageConfiguration: Configuration,
+    temporaryDirectory: File,
+    sourceManagedValue: File): Seq[String] = {
     if (languageConfiguration == HaxeJava | languageConfiguration == TestHaxeJava) {
       Seq("-java", temporaryDirectory.getPath,
         "-D", "no-compilation")
     } else if (languageConfiguration == HaxeCSharp | languageConfiguration == TestHaxeCSharp) {
-      Seq("-cs", temporaryDirectory.getPath,
-        "-D", "no-compilation")
+      Seq("-cs", sourceManagedValue.getPath, "-D", "dll")
     } else {
       Seq()
     }
