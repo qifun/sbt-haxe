@@ -367,7 +367,7 @@ final object HaxePlugin extends Plugin {
       Seq("-java", temporaryDirectory.getPath,
         "-D", "no-compilation")
     } else if (languageConfiguration == HaxeCSharp | languageConfiguration == TestHaxeCSharp) {
-      Seq("-cs", sourceManagedValue.getPath, "-D", "dll")
+      Seq("-cs", sourceManagedValue.getPath)
     } else {
       Seq()
     }
