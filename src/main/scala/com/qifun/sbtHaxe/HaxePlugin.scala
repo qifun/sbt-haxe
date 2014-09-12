@@ -340,10 +340,11 @@ final object HaxePlugin extends Plugin {
       Seq(
         ivyConfigurations += Haxe,
         ivyConfigurations += TestHaxe,
-        ivyConfigurations += HaxeJava)
+        ivyConfigurations += HaxeJava,
+        ivyConfigurations += TestHaxeJava)
 
   final val haxeCSharpSettings =
-    sbt.addArtifact(artifact in packageBin in HaxeJava, packageBin in HaxeJava) ++
+    sbt.addArtifact(artifact in packageBin in HaxeCSharp, packageBin in HaxeCSharp) ++
       inConfig(Haxe)(baseHaxeSettings) ++
       inConfig(TestHaxe)(baseHaxeSettings) ++
       inConfig(CSharp)(baseHaxeSettings) ++
@@ -357,7 +358,8 @@ final object HaxePlugin extends Plugin {
       Seq(
         ivyConfigurations += Haxe,
         ivyConfigurations += TestHaxe,
-        ivyConfigurations += HaxeCSharp)
+        ivyConfigurations += HaxeCSharp,
+        ivyConfigurations += TestHaxeCSharp)
 
   private final def outputFlag(
     languageConfiguration: Configuration,
