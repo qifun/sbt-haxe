@@ -10,9 +10,9 @@ scalacOptions += "-deprecation"
 
 scalacOptions += "-feature"
 
-version := "1.1.1-SNAPSHOT"
+version := "1.1.1"
 
-CrossBuilding.crossSbtVersions := Seq("0.13.5")
+CrossBuilding.crossSbtVersions := Seq("0.13")
 
 description := "The rubost asynchronous programming facility for Scala that offers a direct API for working with Futures."
 
