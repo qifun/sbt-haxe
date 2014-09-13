@@ -1,5 +1,7 @@
 # sbt-haxe
 
+<div align="right"><a href="https://travis-ci.org/qifun/sbt-haxe"><img alt="Build Status" src="https://travis-ci.org/qifun/sbt-haxe.png?branch=master"/></a></div>
+
 **sbt-haxe** is a [Sbt](http://www.scala-sbt.org/) plugin to compile [Haxe](http://www.haxe.org/) sources in Java/Scala projects.
 
 ## Usage
