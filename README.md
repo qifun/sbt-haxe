@@ -1,5 +1,7 @@
 # sbt-haxe
 
+<div align="right"><a href="https://travis-ci.org/qifun/sbt-haxe"><img alt="Build Status" src="https://travis-ci.org/qifun/sbt-haxe.png?branch=master"/></a></div>
+
 **sbt-haxe** is a [Sbt](http://www.scala-sbt.org/) plugin to compile [Haxe](http://www.haxe.org/) sources in Java/Scala projects.
 
 ## Usage
@@ -8,7 +10,7 @@
 
 Add the following line to your `project/plugins.sbt`:
 
-    addSbtPlugin("com.qifun" % "sbt-haxe" % "1.0.0")
+    addSbtPlugin("com.qifun" % "sbt-haxe" % "1.1.2")
 
 And add `haxeSettings` to your `build.sbt`:
 

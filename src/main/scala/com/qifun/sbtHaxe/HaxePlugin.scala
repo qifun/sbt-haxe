@@ -254,8 +254,12 @@ final object HaxePlugin extends Plugin {
         Defaults.sourceMappings) ++
         Seq(
           managedClasspath := {
-            update.value.filter(configurationFilter(configuration.value.name) &&
-              artifactFilter(classifier = configuration.value.name)).toSeq.map {
+            def makeArtifactFilter(configuration: Configuration): DependencyFilter = {
+              configuration.extendsConfigs.map(makeArtifactFilter).fold(artifactFilter(classifier = configuration.name))(_ || _)
+            }
+            update.value.filter(
+              configurationFilter(configuration.value.name) &&
+              makeArtifactFilter(configuration.value)).toSeq.map {
               case (conf, module, art, file) => {
                 Attributed(file)(
                   AttributeMap.empty.
@@ -278,7 +282,7 @@ final object HaxePlugin extends Plugin {
               } yield sourcePath)).classpath
           },
           unmanagedSourceDirectories := Seq(sourceDirectory.value),
-          includeFilter in unmanagedSources := "*.hx")
+          includeFilter in unmanagedSources := new FileFilter { override final def accept(file: File) = file.isFile })
 
   final val extendSettings =
     Seq(
