@@ -46,7 +46,7 @@ final object HaxePlugin extends Plugin {
   final val haxePlatformName = SettingKey[String]("haxe-platform-name", "The name of the haxe platform")
   final val haxe = TaskKey[Seq[File]]("haxe", "Convert Haxe source code to Java or C#.")
   final val haxeXmls = TaskKey[Seq[File]]("haxe-xmls", "Generate Haxe xmls.")
-  final val docRegex = SettingKey[Seq[String]]("dox-regex", "The Regex that used to generate Haxe documentation.")
+  final val doxRegex = SettingKey[Seq[String]]("dox-regex", "The Regex that used to generate Haxe documentation.")
   final val haxeXml = TaskKey[Seq[File]]("haxeXml", "Generate Haxe xml.")
 
   override final def globalSettings =
@@ -224,7 +224,7 @@ final object HaxePlugin extends Plugin {
           (haxelibCommand in injectConfiguration).value,
           "run", "dox", "--input-path", haxeXmlDirectory.toString,
           "--output-path", doxOutputDirectory.getPath.toString) ++
-          (docRegex in injectConfiguration).value
+          (doxRegex in injectConfiguration).value
       (streams in injectConfiguration).value.log.info(processBuildDoc.mkString("\"", "\" \"", "\""))
       processBuildDoc !< logger match {
         case 0 =>
@@ -369,8 +369,8 @@ final object HaxePlugin extends Plugin {
         haxeXmls in Compile ++= (haxeXml in Compile).value,
         haxeXmls in Test ++= (haxeXml in Test).value,
         haxePlatformName in Compile := "java",
-        docRegex in Compile := doxRegex((sourceDirectories in HaxeJava).value),
-        docRegex in Test := doxRegex((sourceDirectories in TestHaxeJava).value),
+        doxRegex in Compile := doxRegex((sourceDirectories in HaxeJava).value),
+        doxRegex in Test := doxRegex((sourceDirectories in TestHaxeJava).value),
         ivyConfigurations += Haxe,
         ivyConfigurations += TestHaxe,
         ivyConfigurations += HaxeJava,
@@ -394,8 +394,8 @@ final object HaxePlugin extends Plugin {
         // TODO (haxePlatformName in TestCSharp) should extend from (haxePlatformName in CSharp). 
         // But now it doesn't work.
         haxePlatformName in TestCSharp := "cs",
-        docRegex in Compile := doxRegex((sourceDirectories in HaxeCSharp).value),
-        docRegex in Test := doxRegex((sourceDirectories in TestHaxeCSharp).value),
+        doxRegex in Compile := doxRegex((sourceDirectories in HaxeCSharp).value),
+        doxRegex in Test := doxRegex((sourceDirectories in TestHaxeCSharp).value),
         ivyConfigurations += Haxe,
         ivyConfigurations += TestHaxe,
         ivyConfigurations += HaxeCSharp,
