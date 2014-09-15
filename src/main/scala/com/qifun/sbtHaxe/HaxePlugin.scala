@@ -43,14 +43,14 @@ final object HaxePlugin extends Plugin {
   final val haxeOptions = SettingKey[Seq[String]]("haxe-options", "Additional command-line options for Haxe compiler.")
   final val haxeCommand = SettingKey[String]("haxe-command", "The Haxe executable.")
   final val haxelibCommand = SettingKey[String]("haxeilb-command", "The haxelib executable")
+  final val haxePlatformName = SettingKey[String]("haxe-platform-name", "The name of the haxe platform")
   final val haxe = TaskKey[Seq[File]]("haxe", "Convert Haxe source code to Java or C#.")
-  final val dox = TaskKey[Seq[File]]("dox", "Generate Haxe documentation.")
-  final val doxPlatforms =
-    SettingKey[Seq[String]]("dox-platforms", "The platforms that Haxe documentation is generated for.")
+  final val haxeXmls = TaskKey[Seq[File]]("haxe-xmls", "Generate Haxe xmls.")
+  final val docRegex = SettingKey[Seq[String]]("dox-regex", "The Regex that used to generate Haxe documentation.")
+  final val haxeXml = TaskKey[Seq[File]]("haxeXml", "Generate Haxe xml.")
 
   override final def globalSettings =
     super.globalSettings ++ Seq(
-      doxPlatforms := Seq("java"),
       haxeCommand := "haxe",
       haxelibCommand := "haxelib")
 
@@ -150,17 +150,14 @@ final object HaxePlugin extends Plugin {
     }
   }
 
-  final def doxSetting(
+  final def haxeXmlSetting(
     haxeConfiguration: Configuration,
     injectConfiguration: Configuration) = {
-    dox in injectConfiguration := {
+    haxeXml in injectConfiguration := {
       val haxeStreams = (streams in haxeConfiguration).value
-      val deps = (buildDependencies in haxeConfiguration).value.classpath((thisProjectRef in haxeConfiguration).value)
-      val sourcePathes = (sourceDirectories in haxeConfiguration).value
-      val data = (settingsData in haxeConfiguration).value
       val target = (crossTarget in haxeConfiguration).value
-      val doxOutputDirectory = target / (injectConfiguration.name + "-dox")
       val includes = (dependencyClasspath in haxeConfiguration).value
+      val doxPlatform = (haxePlatformName in injectConfiguration).value
 
       val cachedTranfer =
         FileFunction.cached(
@@ -172,60 +169,80 @@ final object HaxePlugin extends Plugin {
             val sourceManagedValue = (sourceManaged in injectConfiguration).value
             val haxeXmlDirectory = target / "haxe-xml"
             haxeXmlDirectory.mkdirs()
-            for (doxPlatform <- (doxPlatforms in injectConfiguration).value) {
-              val processBuilderXml =
-                Seq[String](
-                  (haxeCommand in injectConfiguration).value,
-                  "-D", "doc-gen",
-                  "-xml", (haxeXmlDirectory / raw"$doxPlatform.xml").toString,
-                  raw"-$doxPlatform", "dummy", "--no-output") ++
-                  (haxeOptions in injectConfiguration in dox).value ++
-                  (for (sourcePath <- (sourceDirectories in haxeConfiguration).value) yield {
-                    Seq("-cp", sourcePath.getPath.toString)
-                  }).flatten ++
-                  projectPathFlags(
-                    haxeStreams,
-                    target,
-                    includes,
-                    scalaVersion.value,
-                    haxeConfiguration.name) ++
-                    (for {
-                      path <- (dependencyClasspath in injectConfiguration).value
-                      if path.data.exists
-                    } yield {
-                      Seq("-java-lib", path.data.toString)
-                    }).flatten ++
-                    haxeModules(in, (sourceDirectories in haxeConfiguration).value)
-              (streams in haxeConfiguration).value.log.info(processBuilderXml.mkString("\"", "\" \"", "\""))
-              processBuilderXml !< logger match {
-                case 0 =>
-                  (streams in haxeConfiguration).value.log.debug(raw"Generate $doxPlatform.xml success!")
-                case result =>
-                  throw new MessageOnlyException(raw"Generate $doxPlatform.xml fail: " + result)
-              }
-            }
-
-            val processBuildDoc =
+            val xmlFile = (haxeXmlDirectory / raw"$doxPlatform.xml")
+            val processBuilderXml =
               Seq[String](
-                (haxelibCommand in injectConfiguration).value,
-                "run", "dox", "--input-path", haxeXmlDirectory.toString,
-                "--output-path", doxOutputDirectory.getPath.toString) ++
-                (for (sourcePath <- sourcePathes) yield haxelibIncludeFlags(sourcePath, sourcePath)).flatten
-            (streams in haxeConfiguration).value.log.info(processBuildDoc.mkString("\"", "\" \"", "\""))
-            processBuildDoc !< logger match {
+                (haxeCommand in injectConfiguration).value,
+                "-D", "doc-gen",
+                "-xml", xmlFile.toString,
+                raw"-$doxPlatform", "dummy", "--no-output") ++
+                (haxeOptions in injectConfiguration in haxeXml).value ++
+                (for (sourcePath <- (sourceDirectories in haxeConfiguration).value) yield {
+                  Seq("-cp", sourcePath.getPath.toString)
+                }).flatten ++
+                projectPathFlags(
+                  haxeStreams,
+                  target,
+                  includes,
+                  scalaVersion.value,
+                  haxeConfiguration.name) ++
+                  (for {
+                    path <- (dependencyClasspath in injectConfiguration).value
+                    if path.data.exists
+                  } yield {
+                    Seq("-java-lib", path.data.toString)
+                  }).flatten ++
+                  haxeModules(in, (sourceDirectories in haxeConfiguration).value)
+            haxeStreams.log.info(processBuilderXml.mkString("\"", "\" \"", "\""))
+            processBuilderXml !< logger match {
               case 0 =>
-                (doxOutputDirectory ** (
-                  globFilter("*.html") ||
-                  globFilter("*.css") ||
-                  globFilter("*.js") ||
-                  globFilter("*.png") ||
-                  globFilter("*.ico"))).get.toSet
+                haxeStreams.log.debug(raw"Generate $doxPlatform.xml success!")
               case result =>
-                throw new MessageOnlyException("haxe create doc exception: " + result)
+                throw new MessageOnlyException(raw"Generate $doxPlatform.xml fail: " + result)
             }
+            Seq[File]().toSet + xmlFile
           }
       cachedTranfer((sources in haxeConfiguration).value.toSet).toSeq
     }
+  }
+
+  final def docSetting(
+    haxeConfiguraion: Configuration,
+    injectConfiguration: Configuration) = {
+    doc in haxeConfiguraion <<= Def.task {
+      val haxeStreams = (streams in injectConfiguration).value
+      val target = (crossTarget in injectConfiguration).value
+      val doxOutputDirectory = target / (injectConfiguration.name + "-dox")
+
+      (streams in injectConfiguration).value.log.info("Generating haxe document...")
+      val logger = (streams in injectConfiguration).value.log
+      val sourceManagedValue = (sourceManaged in injectConfiguration).value
+      val haxeXmlDirectory = target / "haxe-xml"
+
+      val processBuildDoc =
+        Seq[String](
+          (haxelibCommand in injectConfiguration).value,
+          "run", "dox", "--input-path", haxeXmlDirectory.toString,
+          "--output-path", doxOutputDirectory.getPath.toString) ++
+          (docRegex in injectConfiguration).value
+      (streams in injectConfiguration).value.log.info(processBuildDoc.mkString("\"", "\" \"", "\""))
+      processBuildDoc !< logger match {
+        case 0 =>
+          (doxOutputDirectory ** (
+            globFilter("*.html") ||
+            globFilter("*.css") ||
+            globFilter("*.js") ||
+            globFilter("*.png") ||
+            globFilter("*.ico"))).get
+          doxOutputDirectory
+        case result =>
+          throw new MessageOnlyException("haxe create doc exception: " + result)
+      }
+    }.dependsOn(haxeXmls in injectConfiguration)
+  }
+
+  private final def doxRegex(sourceDirectories: Seq[File]) = {
+    (for (sourcePath <- sourceDirectories) yield haxelibIncludeFlags(sourcePath, sourcePath)).flatten
   }
 
   final val baseHaxeSettings =
@@ -314,7 +331,9 @@ final object HaxePlugin extends Plugin {
     haxeOptions in CSharp := Nil,
     haxeOptions in TestCSharp := Nil,
     haxeOptions in Compile := Nil,
-    haxeOptions in Test := Nil)
+    haxeOptions in Test := Nil,
+    haxeXmls in Compile := Nil,
+    haxeXmls in Test := Nil)
 
   final def injectSettings(
     haxeConfiguration: Configuration,
@@ -322,22 +341,32 @@ final object HaxePlugin extends Plugin {
     Seq(
       haxeSetting(haxeConfiguration, injectConfiguration),
       haxeOptions in injectConfiguration in haxe := (haxeOptions in injectConfiguration).value,
-      doxSetting(haxeConfiguration, injectConfiguration),
-      haxeOptions in injectConfiguration in dox := (haxeOptions in injectConfiguration).value,
+      haxeXmlSetting(haxeConfiguration, injectConfiguration),
+      haxeOptions in injectConfiguration in doc := (haxeOptions in injectConfiguration).value,
       sourceGenerators in injectConfiguration <+= haxe in injectConfiguration)
   }
 
+  final val haxeSettings =
+    inConfig(Haxe)(baseHaxeSettings) ++
+      inConfig(TestHaxe)(baseHaxeSettings) ++
+      docSetting(Haxe, Compile) ++
+      docSetting(TestHaxe, Test)
+
   final val haxeJavaSettings =
     sbt.addArtifact(artifact in packageBin in HaxeJava, packageBin in HaxeJava) ++
-      inConfig(Haxe)(baseHaxeSettings) ++
-      inConfig(TestHaxe)(baseHaxeSettings) ++
       inConfig(HaxeJava)(baseHaxeSettings) ++
       inConfig(HaxeJava)(extendSettings) ++
       inConfig(TestHaxeJava)(baseHaxeSettings) ++
       inConfig(TestHaxeJava)(extendTestSettings) ++
       injectSettings(HaxeJava, Compile) ++
       injectSettings(TestHaxeJava, Test) ++
+      haxeSettings ++
       Seq(
+        haxeXmls in Compile ++= (haxeXml in Compile).value,
+        haxeXmls in Test ++= (haxeXml in Test).value,
+        haxePlatformName in Compile := "java",
+        docRegex in Compile := doxRegex((sourceDirectories in HaxeJava).value),
+        docRegex in Test := doxRegex((sourceDirectories in TestHaxeJava).value),
         ivyConfigurations += Haxe,
         ivyConfigurations += TestHaxe,
         ivyConfigurations += HaxeJava,
@@ -345,8 +374,6 @@ final object HaxePlugin extends Plugin {
 
   final val haxeCSharpSettings =
     sbt.addArtifact(artifact in packageBin in HaxeCSharp, packageBin in HaxeCSharp) ++
-      inConfig(Haxe)(baseHaxeSettings) ++
-      inConfig(TestHaxe)(baseHaxeSettings) ++
       inConfig(CSharp)(baseHaxeSettings) ++
       inConfig(TestCSharp)(baseHaxeSettings) ++
       inConfig(HaxeCSharp)(baseHaxeSettings) ++
@@ -355,7 +382,16 @@ final object HaxePlugin extends Plugin {
       inConfig(TestHaxeCSharp)(extendTestSettings) ++
       injectSettings(HaxeCSharp, CSharp) ++
       injectSettings(TestHaxeCSharp, TestCSharp) ++
+      haxeSettings ++
       Seq(
+        haxeXmls in Compile ++= (haxeXml in CSharp).value,
+        haxeXmls in Test ++= (haxeXml in TestCSharp).value,
+        haxePlatformName in CSharp := "cs",
+        // TODO (haxePlatformName in TestCSharp) should extend from (haxePlatformName in CSharp). 
+        // But now it doesn't work.
+        haxePlatformName in TestCSharp := "cs",
+        docRegex in Compile := doxRegex((sourceDirectories in HaxeCSharp).value),
+        docRegex in Test := doxRegex((sourceDirectories in TestHaxeCSharp).value),
         ivyConfigurations += Haxe,
         ivyConfigurations += TestHaxe,
         ivyConfigurations += HaxeCSharp,
@@ -468,6 +504,18 @@ final object HaxePlugin extends Plugin {
       Seq()
     }
   }
+
+  private final def getDoxPlatform(injectConfiguration: Configuration) = {
+    injectConfiguration match {
+      case Compile | Test =>
+        "java"
+      case CSharp | TestCSharp =>
+        "cs"
+      case _ =>
+        throw new MessageOnlyException("Not such configuration!")
+    }
+  }
+
 }
 
 // vim: et sts=2 sw=2
