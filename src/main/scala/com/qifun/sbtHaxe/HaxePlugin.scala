@@ -509,17 +509,6 @@ final object HaxePlugin extends Plugin {
     }
   }
 
-  private final def getDoxPlatform(injectConfiguration: Configuration) = {
-    injectConfiguration match {
-      case Compile | Test =>
-        "java"
-      case CSharp | TestCSharp =>
-        "cs"
-      case _ =>
-        throw new MessageOnlyException("Not such configuration!")
-    }
-  }
-
 }
 
 // vim: et sts=2 sw=2
