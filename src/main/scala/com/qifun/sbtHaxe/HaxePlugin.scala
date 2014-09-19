@@ -31,6 +31,8 @@ final object HaxePlugin extends Plugin {
 
   private val WarningRegex = """^(.*)\s:\sWarning\s:\s(.*)$""".r
 
+  private val CSharpUnitTestErrorRegex = """(^ERR:\s(.*)$)|(^FAILED\s(\d)*\stests,(.*)$)|(^Called\sfrom(.*)$)""".r
+
   final val Haxe = config("haxe")
   final val TestHaxe = config("test-haxe") extend Haxe
   final val HaxeJava = config("haxe-java") extend Haxe
@@ -141,7 +143,7 @@ final object HaxePlugin extends Plugin {
                   }
                 }
                 case result => {
-                  throw new MessageOnlyException("haxe returns " + result)
+                  throw new MessageOnlyException("Haxe returns " + result)
                 }
               }
             }
@@ -236,13 +238,40 @@ final object HaxePlugin extends Plugin {
             globFilter("*.ico"))).get
           doxOutputDirectory
         case result =>
-          throw new MessageOnlyException("haxe create doc exception: " + result)
+          throw new MessageOnlyException("Haxe create doc exception: " + result)
       }
     }.dependsOn(haxeXmls in injectConfiguration)
   }
 
   private final def doxRegex(sourceDirectories: Seq[File]) = {
     (for (sourcePath <- sourceDirectories) yield haxelibIncludeFlags(sourcePath, sourcePath)).flatten
+  }
+
+  private final def csharpRunSettings(injectConfiguration: Configuration) = {
+    run in injectConfiguration <<= Def.inputTask {
+      val exeDirectory = (sourceManaged in injectConfiguration).value / "bin"
+      val logger = (streams in injectConfiguration).value.log
+      class TestProcessLogger extends ProcessLogger {
+        def info(s: => String): Unit = {
+          if (CSharpUnitTestErrorRegex.findAllIn(s).hasNext) {
+            logger.error(s)
+          } else {
+            logger.info(s)
+          }
+        }
+        def error(s: => String): Unit = logger.error(s)
+        def buffer[T](f: => T): T = f
+      }
+      val testLogger = new TestProcessLogger
+      for (exe <- (exeDirectory ** (globFilter("*.exe"))).get) {
+        exe.getPath !< testLogger match {
+          case 0 =>
+            logger.debug(raw"Excecute ${exe.getPath} success!")
+          case result =>
+            throw new MessageOnlyException("Test csharp exception: " + result)
+        }
+      }
+    }.dependsOn(haxe in injectConfiguration)
   }
 
   final val baseHaxeSettings =
@@ -259,15 +288,15 @@ final object HaxePlugin extends Plugin {
             }
             update.value.filter(
               configurationFilter(configuration.value.name) &&
-              makeArtifactFilter(configuration.value)).toSeq.map {
-              case (conf, module, art, file) => {
-                Attributed(file)(
-                  AttributeMap.empty.
-                    put(artifact.key, art).
-                    put(moduleID.key, module).
-                    put(configuration.key, configuration.value))
-              }
-            }.distinct
+                makeArtifactFilter(configuration.value)).toSeq.map {
+                case (conf, module, art, file) => {
+                  Attributed(file)(
+                    AttributeMap.empty.
+                      put(artifact.key, art).
+                      put(moduleID.key, module).
+                      put(configuration.key, configuration.value))
+                }
+              }.distinct
           },
           internalDependencyClasspath := {
             (buildInternalDependencyClasspath(
@@ -387,6 +416,8 @@ final object HaxePlugin extends Plugin {
       injectSettings(HaxeCSharp, CSharp) ++
       injectSettings(TestHaxeCSharp, TestCSharp) ++
       haxeSettings ++
+      csharpRunSettings(CSharp) ++ 
+      csharpRunSettings(TestCSharp) ++
       Seq(
         haxeXmls in Compile ++= (haxeXml in CSharp).value,
         haxeXmls in Test ++= (haxeXml in TestCSharp).value,
