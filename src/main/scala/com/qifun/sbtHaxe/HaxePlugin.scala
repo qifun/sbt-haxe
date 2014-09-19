@@ -393,7 +393,6 @@ final object HaxePlugin extends Plugin {
       inConfig(TestHaxeJava)(extendTestSettings) ++
       injectSettings(HaxeJava, Compile) ++
       injectSettings(TestHaxeJava, Test) ++
-      haxeSettings ++
       Seq(
         haxeXmls in Compile ++= (haxeXml in Compile).value,
         haxeXmls in Test ++= (haxeXml in Test).value,
@@ -415,8 +414,7 @@ final object HaxePlugin extends Plugin {
       inConfig(TestHaxeCSharp)(extendTestSettings) ++
       injectSettings(HaxeCSharp, CSharp) ++
       injectSettings(TestHaxeCSharp, TestCSharp) ++
-      haxeSettings ++
-      csharpRunSettings(CSharp) ++ 
+      csharpRunSettings(CSharp) ++
       csharpRunSettings(TestCSharp) ++
       Seq(
         haxeXmls in Compile ++= (haxeXml in CSharp).value,
