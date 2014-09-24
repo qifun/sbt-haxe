@@ -331,6 +331,10 @@ final object HaxePlugin extends Plugin {
     }
   }
 
+  override final def buildSettings =
+    super.buildSettings :+
+      (testFrameworks += new TestFramework("com.qifun.sbtHaxe.testInterface.HaxeUnitFramework"))
+
   override final def projectSettings = super.projectSettings ++ Seq(
     haxeOptions in CSharp := Nil,
     haxeOptions in TestCSharp := Nil,
