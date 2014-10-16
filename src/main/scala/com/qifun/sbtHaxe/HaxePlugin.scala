@@ -287,7 +287,7 @@ final object HaxePlugin extends Plugin {
               configuration.extendsConfigs.map(makeArtifactFilter).fold(artifactFilter(classifier = configuration.name))(_ || _)
             }
             update.value.filter(
-              configurationFilter(configuration.value.name) &&
+              (configurationFilter(configuration.value.name) || configurationFilter("provided")) &&
                 makeArtifactFilter(configuration.value)).toSeq.map {
                 case (conf, module, art, file) => {
                   Attributed(file)(
