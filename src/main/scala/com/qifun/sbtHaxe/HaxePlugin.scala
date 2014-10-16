@@ -470,7 +470,7 @@ final object HaxePlugin extends Plugin {
     val unpacked = unpack(unpacking.map { _.data }(collection.breakOut))
     val directories = (for {
       haxeJar <- unpacking
-    } yield targetDirectory / (configurationName + "_unpacked_haxe") / haxeJar.data.getName) ++ depsClasspath.map(_.data)
+    } yield targetDirectory / (configurationName + "_unpacked_haxe") / haxeJar.data.getName) ++ rawIncludes.map(_.data)
     val dependSources = (for {
       dep <- directories
       if dep.exists
