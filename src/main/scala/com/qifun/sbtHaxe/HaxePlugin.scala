@@ -31,6 +31,8 @@ final object HaxePlugin extends Plugin {
 
   private val WarningRegex = """^(.*)\s:\sWarning\s:\s(.*)$""".r
 
+  private val ErrorRegex = """^(.*):\serror\sCS(.*):\s(.*)$""".r
+
   private val CSharpUnitTestErrorRegex = """(^ERR:\s(.*)$)|(^FAILED\s(\d)*\stests,(.*)$)|(^Called\sfrom(.*)$)""".r
 
   final val Haxe = config("haxe")
@@ -114,7 +116,13 @@ final object HaxePlugin extends Plugin {
               val logger = (streams in haxeConfiguration).value.log
               IO.delete(sourceManagedValue)
               class HaxeProcessLogger extends ProcessLogger {
-                def info(s: => String): Unit = logger.info(s)
+                def info(s: => String): Unit = {
+                  if (ErrorRegex.findAllIn(s).hasNext) {
+                    logger.error(s)
+                  } else {
+                    logger.info(s)
+                  }
+                }
                 def error(s: => String): Unit = {
                   if (WarningRegex.findAllIn(s).hasNext) {
                     logger.warn(s)
