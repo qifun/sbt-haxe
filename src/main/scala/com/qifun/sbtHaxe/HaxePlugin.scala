@@ -31,6 +31,8 @@ final object HaxePlugin extends Plugin {
 
   private val WarningRegex = """^(.*)\s:\sWarning\s:\s(.*)$""".r
 
+  private val ErrorRegex = """^(.*):\serror\sCS(.*):\s(.*)$""".r
+
   private val CSharpUnitTestErrorRegex = """(^ERR:\s(.*)$)|(^FAILED\s(\d)*\stests,(.*)$)|(^Called\sfrom(.*)$)""".r
 
   final val Haxe = config("haxe")
@@ -114,7 +116,13 @@ final object HaxePlugin extends Plugin {
               val logger = (streams in haxeConfiguration).value.log
               IO.delete(sourceManagedValue)
               class HaxeProcessLogger extends ProcessLogger {
-                def info(s: => String): Unit = logger.info(s)
+                def info(s: => String): Unit = {
+                  if (ErrorRegex.findAllIn(s).hasNext) {
+                    logger.error(s)
+                  } else {
+                    logger.info(s)
+                  }
+                }
                 def error(s: => String): Unit = {
                   if (WarningRegex.findAllIn(s).hasNext) {
                     logger.warn(s)
@@ -139,7 +147,10 @@ final object HaxePlugin extends Plugin {
                       moveMapping.map { _._2 }(collection.breakOut)
                     }
                     case _ =>
-                      Seq[File]().toSet
+                      (sourceManagedValue ** (
+                        globFilter("*.cs") || 
+                        globFilter("*.csproj") || 
+                        globFilter("*.dll"))).get.toSet
                   }
                 }
                 case result => {
@@ -287,7 +298,7 @@ final object HaxePlugin extends Plugin {
               configuration.extendsConfigs.map(makeArtifactFilter).fold(artifactFilter(classifier = configuration.name))(_ || _)
             }
             update.value.filter(
-              configurationFilter(configuration.value.name) &&
+              (configurationFilter(configuration.value.name) || configurationFilter("provided")) &&
                 makeArtifactFilter(configuration.value)).toSeq.map {
                 case (conf, module, art, file) => {
                   Attributed(file)(
@@ -470,7 +481,7 @@ final object HaxePlugin extends Plugin {
     val unpacked = unpack(unpacking.map { _.data }(collection.breakOut))
     val directories = (for {
       haxeJar <- unpacking
-    } yield targetDirectory / (configurationName + "_unpacked_haxe") / haxeJar.data.getName) ++ depsClasspath.map(_.data)
+    } yield targetDirectory / (configurationName + "_unpacked_haxe") / haxeJar.data.getName) ++ rawIncludes.map(_.data)
     val dependSources = (for {
       dep <- directories
       if dep.exists
