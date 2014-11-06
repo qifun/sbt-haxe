@@ -12,7 +12,7 @@ Add the following line to your `project/plugins.sbt`:
 
     addSbtPlugin("com.qifun" % "sbt-haxe" % "1.2.1")
 
-And add `haxeSettings` to your `build.sbt`:
+And add settings to your `build.sbt`:
 
     haxeSettings
     
