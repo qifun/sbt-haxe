@@ -177,7 +177,7 @@ final object HaxePlugin extends Plugin {
           haxeStreams.cacheDirectory / ("dox_" + scalaVersion.value),
           inStyle = FilesInfo.lastModified,
           outStyle = FilesInfo.exists) { (in: Set[File]) =>
-            (streams in haxeConfiguration).value.log.info("Generating haxe document...")
+            (streams in haxeConfiguration).value.log.info("Generating haxe xml document...")
             val logger = (streams in haxeConfiguration).value.log
             val sourceManagedValue = (sourceManaged in injectConfiguration).value
             val haxeXmlDirectory = target / "haxe-xml"
@@ -370,11 +370,12 @@ final object HaxePlugin extends Plugin {
         acc
     }
   }
+  
+  final val HaxeUnit = new TestFramework("com.qifun.sbtHaxe.testInterface.HaxeUnitFramework")
 
   override final def buildSettings =
-    super.buildSettings :+
-      (testFrameworks += new TestFramework("com.qifun.sbtHaxe.testInterface.HaxeUnitFramework"))
-
+    super.buildSettings :+ (testFrameworks += HaxeUnit)
+      
   override final def projectSettings = super.projectSettings ++ Seq(
     haxeOptions in CSharp := Nil,
     haxeOptions in TestCSharp := Nil,
