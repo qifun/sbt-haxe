@@ -55,6 +55,8 @@ final object HaxePlugin extends Plugin {
 
   override final def globalSettings =
     super.globalSettings ++ Seq(
+      haxeOptions := Nil,
+      haxeXmls := Nil,
       haxeCommand := "haxe",
       haxelibCommand := "haxelib")
 
@@ -376,14 +378,6 @@ final object HaxePlugin extends Plugin {
   override final def buildSettings =
     super.buildSettings :+ (testFrameworks += HaxeUnit)
       
-  override final def projectSettings = super.projectSettings ++ Seq(
-    haxeOptions in CSharp := Nil,
-    haxeOptions in TestCSharp := Nil,
-    haxeOptions in Compile := Nil,
-    haxeOptions in Test := Nil,
-    haxeXmls in Compile := Nil,
-    haxeXmls in Test := Nil)
-
   final def injectSettings(
     haxeConfiguration: Configuration,
     injectConfiguration: Configuration) = {
