@@ -149,10 +149,7 @@ final object HaxePlugin extends Plugin {
                       moveMapping.map { _._2 }(collection.breakOut)
                     }
                     case _ =>
-                      (sourceManagedValue ** (
-                        globFilter("*.cs") || 
-                        globFilter("*.csproj") || 
-                        globFilter("*.dll"))).get.toSet
+                      sourceManagedValue.get.toSet
                   }
                 }
                 case result => {
