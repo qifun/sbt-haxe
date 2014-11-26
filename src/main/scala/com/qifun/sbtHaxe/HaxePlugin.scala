@@ -50,7 +50,7 @@ final object HaxePlugin extends Plugin {
   final val haxePlatformName = SettingKey[String]("haxe-platform-name", "The name of the haxe platform")
   final val haxe = TaskKey[Seq[File]]("haxe", "Convert Haxe source code to Java or C#.")
   final val haxeXmls = TaskKey[Seq[File]]("haxe-xmls", "Generate Haxe xmls.")
-  final val doxRegex = SettingKey[Seq[String]]("dox-regex", "The Regex that used to generate Haxe documentation.")
+  final val doxRegex = TaskKey[Seq[String]]("dox-regex", "The Regex that used to generate Haxe documentation.")
   final val haxeXml = TaskKey[Seq[File]]("haxeXml", "Generate Haxe xml.")
 
   override final def globalSettings =
