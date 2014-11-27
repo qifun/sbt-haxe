@@ -369,9 +369,6 @@ final object HaxePlugin extends Plugin {
 
   final val HaxeUnit = new TestFramework("com.qifun.sbtHaxe.testInterface.HaxeUnitFramework")
 
-  override final def projectSettings =
-    super.projectSettings ++ (for (c <- Seq(Compile, Test, CSharp, TestCSharp)) yield target in haxe in c := (sourceManaged in c).value)
-
   override final def buildSettings =
     super.buildSettings :+ (testFrameworks += HaxeUnit)
 
@@ -381,6 +378,11 @@ final object HaxePlugin extends Plugin {
     Seq(
       target in haxeXml := (crossTarget in injectConfiguration).value / "haxe-xml",
       target in haxeXml in injectConfiguration := (target in haxeXml).value / raw"{(haxePlatformName in injectConfiguration).value}.xml",
+      target in haxe in injectConfiguration := {
+        (target in haxe in injectConfiguration).?.value.getOrElse {
+          (sourceManaged in injectConfiguration).value
+        }
+      },
       haxeSetting(haxeConfiguration, injectConfiguration),
       haxeOptions in injectConfiguration in haxe := (haxeOptions in injectConfiguration).value,
       haxeXmlSetting(haxeConfiguration, injectConfiguration),
