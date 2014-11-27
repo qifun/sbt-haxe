@@ -226,7 +226,7 @@ final object HaxePlugin extends Plugin {
 
       (streams in injectConfiguration).value.log.info("Generating haxe document...")
       val logger = (streams in injectConfiguration).value.log
-      val haxeXmlDirectory = (Keys.target in haxeXml).value
+      val haxeXmlDirectory =  (Keys.target in haxeXml).value
 
       val processBuildDoc =
         Seq[String](
@@ -366,23 +366,20 @@ final object HaxePlugin extends Plugin {
         acc
     }
   }
-
+  
   final val HaxeUnit = new TestFramework("com.qifun.sbtHaxe.testInterface.HaxeUnitFramework")
 
   override final def buildSettings =
     super.buildSettings :+ (testFrameworks += HaxeUnit)
-
+      
   final def injectSettings(
     haxeConfiguration: Configuration,
     injectConfiguration: Configuration) = {
     Seq(
+      target in haxe in injectConfiguration := (sourceManaged in injectConfiguration).value,
       target in haxeXml := (crossTarget in injectConfiguration).value / "haxe-xml",
       target in haxeXml in injectConfiguration := (target in haxeXml).value / raw"{(haxePlatformName in injectConfiguration).value}.xml",
-      target in haxe in injectConfiguration := {
-        (target in haxe in injectConfiguration).?.value.getOrElse {
-          (sourceManaged in injectConfiguration).value
-        }
-      },
+      target in haxe in injectConfiguration := (sourceManaged in injectConfiguration).value,
       haxeSetting(haxeConfiguration, injectConfiguration),
       haxeOptions in injectConfiguration in haxe := (haxeOptions in injectConfiguration).value,
       haxeXmlSetting(haxeConfiguration, injectConfiguration),
