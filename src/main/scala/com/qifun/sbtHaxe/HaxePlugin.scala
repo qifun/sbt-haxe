@@ -378,7 +378,7 @@ final object HaxePlugin extends Plugin {
     Seq(
       target in haxe in injectConfiguration := (sourceManaged in injectConfiguration).value,
       target in haxeXml := (crossTarget in injectConfiguration).value / "haxe-xml",
-      target in haxeXml in injectConfiguration := (target in haxeXml).value / raw"{(haxePlatformName in injectConfiguration).value}.xml",
+      target in haxeXml in injectConfiguration := (target in haxeXml).value / raw"${(haxePlatformName in injectConfiguration).value}.xml",
       target in haxe in injectConfiguration := (sourceManaged in injectConfiguration).value,
       haxeSetting(haxeConfiguration, injectConfiguration),
       haxeOptions in injectConfiguration in haxe := (haxeOptions in injectConfiguration).value,
