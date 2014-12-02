@@ -41,6 +41,7 @@ final object SbtHaxe {
       val data = (settingsData in haxeConfiguration).value
       val target = (crossTarget in haxeConfiguration).value
       val haxeOutput = (Keys.target in haxe in injectConfiguration).value
+      val platformName = (haxePlatformName in injectConfiguration).value
 
       val cachedTranfer =
         FileFunction.cached(
@@ -69,9 +70,10 @@ final object SbtHaxe {
                     } yield {
                       Seq("-java-lib", path.data.toString)
                     }).flatten ++
-                    outputFlag(haxeConfiguration, temporaryDirectory, haxeOutput) ++
-                    (haxeOptions in injectConfiguration in haxe).value ++
-                    haxeModules(in, (sourceDirectories in haxeConfiguration).value)
+                    Seq("-" + platformName,
+                      (haxeOutputPath in injectConfiguration).value.getOrElse(temporaryDirectory).getPath) ++
+              (haxeOptions in injectConfiguration in haxe).value ++
+                haxeModules(in, (sourceDirectories in haxeConfiguration).value)
               (streams in haxeConfiguration).value.log.info(processBuilder.mkString("\"", "\" \"", "\""))
               val logger = (streams in haxeConfiguration).value.log
               IO.delete(haxeOutput)
@@ -265,20 +267,6 @@ final object SbtHaxe {
         }
       case List() =>
         acc
-    }
-  }
-
-  private final def outputFlag(
-    languageConfiguration: Configuration,
-    temporaryDirectory: File,
-    haxeOutput: File): Seq[String] = {
-    if (languageConfiguration == HaxeJava | languageConfiguration == TestHaxeJava) {
-      Seq("-java", temporaryDirectory.getPath,
-        "-D", "no-compilation")
-    } else if (languageConfiguration == HaxeCSharp | languageConfiguration == TestHaxeCSharp) {
-      Seq("-cs", haxeOutput.getPath)
-    } else {
-      Seq()
     }
   }
 
