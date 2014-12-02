@@ -34,7 +34,7 @@ final object BaseHaxePlugin extends AutoPlugin {
   
   import autoImport._
 
-  override lazy val projectSettings: Seq[Setting[_]] =
+  override final lazy val projectSettings: Seq[Setting[_]] =
     inConfig(Haxe)(SbtHaxe.baseHaxeSettings) ++
       inConfig(TestHaxe)(SbtHaxe.baseHaxeSettings) ++
       SbtHaxe.docSetting(Haxe, Compile) ++

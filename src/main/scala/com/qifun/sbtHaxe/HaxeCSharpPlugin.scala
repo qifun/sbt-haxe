@@ -21,7 +21,6 @@ import sbt._
 import Keys._
 import HaxeKeys._
 import HaxeConfigurations._
-import sbt.AutoPlugin
 
 /**
  * A plugin used to compile Haxe sources to CSharp sources.
@@ -30,7 +29,7 @@ final object HaxeCSharpPlugin extends AutoPlugin {
   override final def requires = BaseHaxePlugin
   override final def trigger = allRequirements
 
-  override lazy val projectSettings: Seq[Setting[_]] =
+  override final lazy val projectSettings: Seq[Setting[_]] =
     sbt.addArtifact(artifact in packageBin in HaxeCSharp, packageBin in HaxeCSharp) ++
       inConfig(CSharp)(SbtHaxe.baseHaxeSettings) ++
       inConfig(TestCSharp)(SbtHaxe.baseHaxeSettings) ++

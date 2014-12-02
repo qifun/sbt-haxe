@@ -35,4 +35,4 @@ trait HaxeKeys {
 
 }
 
-object HaxeKeys extends HaxeKeys
+final object HaxeKeys extends HaxeKeys

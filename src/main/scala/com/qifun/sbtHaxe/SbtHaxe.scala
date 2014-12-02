@@ -24,15 +24,15 @@ import HaxeConfigurations._
 
 final object SbtHaxe {
 
-  private val HaxeFileRegex = """^(.*)\.hx$""".r
+  private lazy val HaxeFileRegex = """^(.*)\.hx$""".r
 
-  private val WarningRegex = """^(.*)\s:\sWarning\s:\s(.*)$""".r
+  private lazy val WarningRegex = """^(.*)\s:\sWarning\s:\s(.*)$""".r
 
-  private val ErrorRegex = """^(.*):\serror\sCS(.*):\s(.*)$""".r
+  private lazy val ErrorRegex = """^(.*):\serror\sCS(.*):\s(.*)$""".r
 
-  private val CSharpUnitTestErrorRegex = """(^ERR:\s(.*)$)|(^FAILED\s(\d)*\stests,(.*)$)|(^Called\sfrom(.*)$)""".r
+  private lazy val CSharpUnitTestErrorRegex = """(^ERR:\s(.*)$)|(^FAILED\s(\d)*\stests,(.*)$)|(^Called\sfrom(.*)$)""".r
 
-  final def haxeSetting(
+  private final def haxeSetting(
     haxeConfiguration: Configuration,
     injectConfiguration: Configuration) = {
     haxe in injectConfiguration := {
@@ -122,7 +122,7 @@ final object SbtHaxe {
     }
   }
 
-  final def haxeXmlSetting(
+  private final def haxeXmlSetting(
     haxeConfiguration: Configuration,
     injectConfiguration: Configuration) = {
     haxeXml in injectConfiguration := {
@@ -176,7 +176,7 @@ final object SbtHaxe {
     }
   }
 
-  final def docSetting(
+  private[sbtHaxe] final def docSetting(
     haxeConfiguration: Configuration,
     injectConfiguration: Configuration) = {
     doc in haxeConfiguration <<= Def.task {
@@ -364,7 +364,7 @@ final object SbtHaxe {
     }
   }
 
-  final val baseHaxeSettings =
+  private[sbtHaxe] final val baseHaxeSettings =
     Defaults.configTasks ++
       Defaults.configPaths ++
       Classpaths.configSettings ++
@@ -403,7 +403,7 @@ final object SbtHaxe {
           unmanagedSourceDirectories := Seq(sourceDirectory.value),
           includeFilter in unmanagedSources := new FileFilter { override final def accept(file: File) = file.isFile })
 
-  final val extendSettings =
+  private[sbtHaxe] final val extendSettings =
     Seq(
       unmanagedSourceDirectories :=
         unmanagedSourceDirectories.value ++ (unmanagedSourceDirectories in Haxe).value,
@@ -412,7 +412,7 @@ final object SbtHaxe {
       sourceGenerators :=
         sourceGenerators.value ++ (sourceGenerators in Haxe).value)
 
-  final val extendTestSettings =
+  private[sbtHaxe] final val extendTestSettings =
     Seq(
       unmanagedSourceDirectories :=
         unmanagedSourceDirectories.value ++ (unmanagedSourceDirectories in TestHaxe).value,
@@ -421,7 +421,7 @@ final object SbtHaxe {
       sourceGenerators :=
         sourceGenerators.value ++ (sourceGenerators in TestHaxe).value)
 
-  final def injectSettings(
+  private[sbtHaxe] final def injectSettings(
     haxeConfiguration: Configuration,
     injectConfiguration: Configuration) = {
     Seq(

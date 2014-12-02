@@ -35,4 +35,4 @@ trait HaxeConfigurations {
 
 }
 
-object HaxeConfigurations extends HaxeConfigurations
+final object HaxeConfigurations extends HaxeConfigurations
