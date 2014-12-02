@@ -24,7 +24,7 @@ import HaxeConfigurations._
 import sbt.AutoPlugin
 
 /**
- * A plugin used to generate haxe code to csharp code.
+ * A plugin used to compile Haxe sources to CSharp sources.
  */
 final object HaxeCSharpPlugin extends AutoPlugin {
   override final def requires = BaseHaxePlugin

@@ -24,7 +24,7 @@ import HaxeConfigurations._
 import sbt.AutoPlugin
 
 /**
- * A Plugin used to compile haxe code to java code.
+ * A Plugin used to compile Haxe sources to Java sources.
  */
 final object HaxeJavaPlugin extends AutoPlugin {
   override final def requires = BaseHaxePlugin
