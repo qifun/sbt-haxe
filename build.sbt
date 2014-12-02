@@ -8,7 +8,7 @@ scalacOptions += "-deprecation"
 
 scalacOptions += "-feature"
 
-version := "1.3.0"
+version := "1.3.1-SNAPSHOT"
 
 description := "A Sbt plugin used to compile Haxe sources in Java/Scala projects."
 
