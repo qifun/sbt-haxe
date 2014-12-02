@@ -17,15 +17,12 @@
 
 package com.qifun.sbtHaxe
 
-import sbt.Plugin
-import sbt.Keys._
 import sbt._
-import java.io.File
-import java.nio.file.Path
-import scala.Some
-import java.util.regex.Pattern
+import Keys._
+import HaxeKeys._
+import HaxeConfigurations._
 
-final object HaxePlugin extends Plugin {
+final object SbtHaxe {
 
   private val HaxeFileRegex = """^(.*)\.hx$""".r
 
@@ -35,45 +32,6 @@ final object HaxePlugin extends Plugin {
 
   private val CSharpUnitTestErrorRegex = """(^ERR:\s(.*)$)|(^FAILED\s(\d)*\stests,(.*)$)|(^Called\sfrom(.*)$)""".r
 
-  final val Haxe = config("haxe")
-  final val TestHaxe = config("test-haxe") extend Haxe
-  final val HaxeJava = config("haxe-java") extend Haxe
-  final val TestHaxeJava = config("test-haxe-java") extend HaxeJava
-  final val CSharp = config("csharp")
-  final val TestCSharp = config("test-csharp") extend CSharp
-  final val HaxeCSharp = config("haxe-csharp") extend Haxe
-  final val TestHaxeCSharp = config("test-haxe-csharp") extend HaxeCSharp
-
-  final val haxeOptions = SettingKey[Seq[String]]("haxe-options", "Additional command-line options for Haxe compiler.")
-  final val haxeCommand = SettingKey[String]("haxe-command", "The Haxe executable.")
-  final val haxelibCommand = SettingKey[String]("haxelib-command", "The haxelib executable")
-  final val haxePlatformName = SettingKey[String]("haxe-platform-name", "The name of the haxe platform")
-  final val haxe = TaskKey[Seq[File]]("haxe", "Convert Haxe source code to Java or C#.")
-  final val haxeXmls = TaskKey[Seq[File]]("haxe-xmls", "Generate Haxe xmls.")
-  final val doxRegex = TaskKey[Seq[String]]("dox-regex", "The Regex that used to generate Haxe documentation.")
-  final val haxeXml = TaskKey[Seq[File]]("haxeXml", "Generate Haxe xml.")
-
-  override final def globalSettings =
-    super.globalSettings ++ Seq(
-      haxeOptions := Nil,
-      haxeXmls := Nil,
-      haxeCommand := "haxe",
-      haxelibCommand := "haxelib")
-
-  /**
-   *  默认的[[haxe]]任务设置值。
-   *
-   *  当编译Haxe时，某些所需的`SettingKey`是Sbt内置设置。
-   *  所以这些`SettingKey`会使用`haxeConfiguration`参数传入[[Haxe]]或[[TestHaxe]]作为`Configuration`以便区分。
-   *  例如`sourceDirectory`、`dependencyClasspath`等。
-   *
-   *  另一些`SettingKey`是[[HaxePlugin]]插件专用设置，不会与内置设置同名。
-   *  所以这些设置不用自定义的`Configuration`就可以区分，而用`injectConfiguration`参数传入`Compile`或`Test`作为`Configuration`。
-   *  例如[[haxeCommand]]、[[haxeOptions]]等。
-   *
-   *  @param haxeConfiguration 当把Sbt内置`SettingKey`重用于Haxe编译时所需的`Configuration`。
-   *  @param injectConfiguration [[HaxePlugin]]插件专有`SettingKey`所用的Sbt内置`Configuration`。
-   */
   final def haxeSetting(
     haxeConfiguration: Configuration,
     injectConfiguration: Configuration) = {
@@ -226,7 +184,7 @@ final object HaxePlugin extends Plugin {
 
       (streams in injectConfiguration).value.log.info("Generating haxe document...")
       val logger = (streams in injectConfiguration).value.log
-      val haxeXmlDirectory =  (Keys.target in haxeXml).value
+      val haxeXmlDirectory = (Keys.target in haxeXml).value
 
       val processBuildDoc =
         Seq[String](
@@ -250,11 +208,11 @@ final object HaxePlugin extends Plugin {
     }.dependsOn(haxeXmls in injectConfiguration)
   }
 
-  private final def doxRegex(sourceDirectories: Seq[File]) = {
+  private[sbtHaxe] final def buildDoxRegex(sourceDirectories: Seq[File]) = {
     (for (sourcePath <- sourceDirectories) yield haxelibIncludeFlags(sourcePath, sourcePath)).flatten
   }
 
-  private final def csharpRunSettings(injectConfiguration: Configuration) = {
+  private[sbtHaxe] final def csharpRunSettings(injectConfiguration: Configuration) = {
     run in injectConfiguration <<= Def.inputTask {
       val exeDirectory = (sourceManaged in injectConfiguration).value / "bin"
       val logger = (streams in injectConfiguration).value.log
@@ -281,64 +239,7 @@ final object HaxePlugin extends Plugin {
     }.dependsOn(haxe in injectConfiguration)
   }
 
-  final val baseHaxeSettings =
-    Defaults.configTasks ++
-      Defaults.configPaths ++
-      Classpaths.configSettings ++
-      Defaults.packageTaskSettings(
-        packageBin,
-        Defaults.sourceMappings) ++
-        Seq(
-          managedClasspath := {
-            def makeArtifactFilter(configuration: Configuration): DependencyFilter = {
-              configuration.extendsConfigs.map(makeArtifactFilter).fold(artifactFilter(classifier = configuration.name))(_ || _)
-            }
-            update.value.filter(
-              (configurationFilter(configuration.value.name) || configurationFilter("provided")) &&
-                makeArtifactFilter(configuration.value)).toSeq.map {
-                case (conf, module, art, file) => {
-                  Attributed(file)(
-                    AttributeMap.empty.
-                      put(artifact.key, art).
-                      put(moduleID.key, module).
-                      put(configuration.key, configuration.value))
-                }
-              }.distinct
-          },
-          internalDependencyClasspath := {
-            (buildInternalDependencyClasspath(
-              thisProjectRef.value,
-              configuration.value,
-              settingsData.value,
-              buildDependencies.value, Seq[File]()) ++ (for {
-                ac <- Classpaths.allConfigs(configuration.value)
-                if ac != configuration.value
-                sourcePaths <- (sourceDirectories in (thisProjectRef.value, ac)).get(settingsData.value).toList
-                sourcePath <- sourcePaths
-              } yield sourcePath)).classpath
-          },
-          unmanagedSourceDirectories := Seq(sourceDirectory.value),
-          includeFilter in unmanagedSources := new FileFilter { override final def accept(file: File) = file.isFile })
-
-  final val extendSettings =
-    Seq(
-      unmanagedSourceDirectories :=
-        unmanagedSourceDirectories.value ++ (unmanagedSourceDirectories in Haxe).value,
-      managedSourceDirectories :=
-        managedSourceDirectories.value ++ (managedSourceDirectories in Haxe).value,
-      sourceGenerators :=
-        sourceGenerators.value ++ (sourceGenerators in Haxe).value)
-
-  final val extendTestSettings =
-    Seq(
-      unmanagedSourceDirectories :=
-        unmanagedSourceDirectories.value ++ (unmanagedSourceDirectories in TestHaxe).value,
-      managedSourceDirectories :=
-        managedSourceDirectories.value ++ (managedSourceDirectories in TestHaxe).value,
-      sourceGenerators :=
-        sourceGenerators.value ++ (sourceGenerators in TestHaxe).value)
-
-  private final def buildInternalDependencyClasspath(
+  private[sbtHaxe] final def buildInternalDependencyClasspath(
     projectRef: ProjectRef,
     configuration: Configuration,
     settingsData: Settings[Scope],
@@ -366,77 +267,6 @@ final object HaxePlugin extends Plugin {
         acc
     }
   }
-  
-  final val HaxeUnit = new TestFramework("com.qifun.sbtHaxe.testInterface.HaxeUnitFramework")
-
-  override final def buildSettings =
-    super.buildSettings :+ (testFrameworks += HaxeUnit)
-      
-  final def injectSettings(
-    haxeConfiguration: Configuration,
-    injectConfiguration: Configuration) = {
-    Seq(
-      target in haxe in injectConfiguration := (sourceManaged in injectConfiguration).value,
-      target in haxeXml := (crossTarget in injectConfiguration).value / "haxe-xml",
-      target in haxeXml in injectConfiguration := (target in haxeXml).value / raw"${(haxePlatformName in injectConfiguration).value}.xml",
-      target in haxe in injectConfiguration := (sourceManaged in injectConfiguration).value,
-      haxeSetting(haxeConfiguration, injectConfiguration),
-      haxeOptions in injectConfiguration in haxe := (haxeOptions in injectConfiguration).value,
-      haxeXmlSetting(haxeConfiguration, injectConfiguration),
-      haxeOptions in injectConfiguration in doc := (haxeOptions in injectConfiguration).value,
-      sourceGenerators in injectConfiguration <+= haxe in injectConfiguration)
-  }
-
-  final val haxeSettings =
-    inConfig(Haxe)(baseHaxeSettings) ++
-      inConfig(TestHaxe)(baseHaxeSettings) ++
-      docSetting(Haxe, Compile) ++
-      docSetting(TestHaxe, Test)
-
-  final val haxeJavaSettings =
-    sbt.addArtifact(artifact in packageBin in HaxeJava, packageBin in HaxeJava) ++
-      inConfig(HaxeJava)(baseHaxeSettings) ++
-      inConfig(HaxeJava)(extendSettings) ++
-      inConfig(TestHaxeJava)(baseHaxeSettings) ++
-      inConfig(TestHaxeJava)(extendTestSettings) ++
-      injectSettings(HaxeJava, Compile) ++
-      injectSettings(TestHaxeJava, Test) ++
-      Seq(
-        haxeXmls in Compile ++= (haxeXml in Compile).value,
-        haxeXmls in Test ++= (haxeXml in Test).value,
-        haxePlatformName in Compile := "java",
-        doxRegex in Compile := doxRegex((sourceDirectories in HaxeJava).value),
-        doxRegex in Test := doxRegex((sourceDirectories in TestHaxeJava).value),
-        ivyConfigurations += Haxe,
-        ivyConfigurations += TestHaxe,
-        ivyConfigurations += HaxeJava,
-        ivyConfigurations += TestHaxeJava)
-
-  final val haxeCSharpSettings =
-    sbt.addArtifact(artifact in packageBin in HaxeCSharp, packageBin in HaxeCSharp) ++
-      inConfig(CSharp)(baseHaxeSettings) ++
-      inConfig(TestCSharp)(baseHaxeSettings) ++
-      inConfig(HaxeCSharp)(baseHaxeSettings) ++
-      inConfig(HaxeCSharp)(extendSettings) ++
-      inConfig(TestHaxeCSharp)(baseHaxeSettings) ++
-      inConfig(TestHaxeCSharp)(extendTestSettings) ++
-      injectSettings(HaxeCSharp, CSharp) ++
-      injectSettings(TestHaxeCSharp, TestCSharp) ++
-      csharpRunSettings(CSharp) ++
-      csharpRunSettings(TestCSharp) ++
-      Seq(
-        haxeXmls in Compile ++= (haxeXml in CSharp).value,
-        haxeXmls in Test ++= (haxeXml in TestCSharp).value,
-        haxePlatformName in CSharp := "cs",
-        // TODO (haxePlatformName in TestCSharp) should extend from (haxePlatformName in CSharp). 
-        // But now it doesn't work.
-        haxePlatformName in TestCSharp := "cs",
-        doxRegex in Compile := doxRegex((sourceDirectories in HaxeCSharp).value),
-        doxRegex in Test := doxRegex((sourceDirectories in TestHaxeCSharp).value),
-        ivyConfigurations += Haxe,
-        ivyConfigurations += TestHaxe,
-        ivyConfigurations += HaxeCSharp,
-        ivyConfigurations += TestHaxeCSharp)
 
   private final def outputFlag(
     languageConfiguration: Configuration,
@@ -546,6 +376,77 @@ final object HaxePlugin extends Plugin {
     }
   }
 
-}
+  final val baseHaxeSettings =
+    Defaults.configTasks ++
+      Defaults.configPaths ++
+      Classpaths.configSettings ++
+      Defaults.packageTaskSettings(
+        packageBin,
+        Defaults.sourceMappings) ++
+        Seq(
+          managedClasspath := {
+            def makeArtifactFilter(configuration: Configuration): DependencyFilter = {
+              configuration.extendsConfigs.map(makeArtifactFilter).fold(artifactFilter(classifier = configuration.name))(_ || _)
+            }
+            update.value.filter(
+              (configurationFilter(configuration.value.name) || configurationFilter("provided")) &&
+                makeArtifactFilter(configuration.value)).toSeq.map {
+                case (conf, module, art, file) => {
+                  Attributed(file)(
+                    AttributeMap.empty.
+                      put(artifact.key, art).
+                      put(moduleID.key, module).
+                      put(configuration.key, configuration.value))
+                }
+              }.distinct
+          },
+          internalDependencyClasspath := {
+            (SbtHaxe.buildInternalDependencyClasspath(
+              thisProjectRef.value,
+              configuration.value,
+              settingsData.value,
+              buildDependencies.value, Seq[File]()) ++ (for {
+                ac <- Classpaths.allConfigs(configuration.value)
+                if ac != configuration.value
+                sourcePaths <- (sourceDirectories in (thisProjectRef.value, ac)).get(settingsData.value).toList
+                sourcePath <- sourcePaths
+              } yield sourcePath)).classpath
+          },
+          unmanagedSourceDirectories := Seq(sourceDirectory.value),
+          includeFilter in unmanagedSources := new FileFilter { override final def accept(file: File) = file.isFile })
 
-// vim: et sts=2 sw=2
+  final val extendSettings =
+    Seq(
+      unmanagedSourceDirectories :=
+        unmanagedSourceDirectories.value ++ (unmanagedSourceDirectories in Haxe).value,
+      managedSourceDirectories :=
+        managedSourceDirectories.value ++ (managedSourceDirectories in Haxe).value,
+      sourceGenerators :=
+        sourceGenerators.value ++ (sourceGenerators in Haxe).value)
+
+  final val extendTestSettings =
+    Seq(
+      unmanagedSourceDirectories :=
+        unmanagedSourceDirectories.value ++ (unmanagedSourceDirectories in TestHaxe).value,
+      managedSourceDirectories :=
+        managedSourceDirectories.value ++ (managedSourceDirectories in TestHaxe).value,
+      sourceGenerators :=
+        sourceGenerators.value ++ (sourceGenerators in TestHaxe).value)
+
+  final def injectSettings(
+    haxeConfiguration: Configuration,
+    injectConfiguration: Configuration) = {
+    Seq(
+      target in haxe in injectConfiguration := (sourceManaged in injectConfiguration).value,
+      target in haxeXml := (crossTarget in injectConfiguration).value / "haxe-xml",
+      target in haxeXml in injectConfiguration :=
+        (target in haxeXml).value / raw"${(haxePlatformName in injectConfiguration).value}.xml",
+      target in haxe in injectConfiguration := (sourceManaged in injectConfiguration).value,
+      haxeSetting(haxeConfiguration, injectConfiguration),
+      haxeOptions in injectConfiguration in haxe := (haxeOptions in injectConfiguration).value,
+      haxeXmlSetting(haxeConfiguration, injectConfiguration),
+      haxeOptions in injectConfiguration in doc := (haxeOptions in injectConfiguration).value,
+      sourceGenerators in injectConfiguration <+= haxe in injectConfiguration)
+  }
+
+}

@@ -12,6 +12,8 @@ scalacOptions += "-feature"
 
 version := "1.3.0-SNAPSHOT"
 
+sbtVersion := "0.13.7"
+
 CrossBuilding.crossSbtVersions := Seq("0.13")
 
 description := "A Sbt plugin used to compile Haxe sources in Java/Scala projects."
