@@ -10,13 +10,13 @@ scalacOptions += "-deprecation"
 
 scalacOptions += "-feature"
 
-version := "1.2.2-SNAPSHOT"
+version := "1.2.2"
 
 CrossBuilding.crossSbtVersions := Seq("0.13")
 
-description := "The rubost asynchronous programming facility for Scala that offers a direct API for working with Futures."
+description := "A Sbt plugin used to compile Haxe sources in Java/Scala projects."
 
-homepage := Some(url("https://github.com/Atry/stateless-future"))
+homepage := Some(url("https://github.com/qifun/sbt-haxe"))
 
 startYear := Some(2014)
 
