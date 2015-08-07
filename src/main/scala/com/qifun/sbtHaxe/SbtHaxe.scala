@@ -45,7 +45,7 @@ final object SbtHaxe {
 
       val cachedTranfer =
         FileFunction.cached(
-          haxeStreams.cacheDirectory / ("haxe_" + scalaVersion.value),
+          target / ("haxe-cache"),
           inStyle = FilesInfo.lastModified,
           outStyle = FilesInfo.exists) { (in: Set[File]) =>
             IO.withTemporaryDirectory { temporaryDirectory =>
@@ -133,7 +133,7 @@ final object SbtHaxe {
 
       val cachedTranfer =
         FileFunction.cached(
-          haxeStreams.cacheDirectory / ("dox_" + scalaVersion.value),
+          target / ("dox-cache"),
           inStyle = FilesInfo.lastModified,
           outStyle = FilesInfo.exists) { (in: Set[File]) =>
             (streams in haxeConfiguration).value.log.info("Generating haxe xml document...")
@@ -280,19 +280,19 @@ final object SbtHaxe {
     scalaVersion: String,
     configurationName: String): Seq[String] = {
     val unpack = FileFunction.cached(
-      taskStreams.cacheDirectory / ("unpacked_haxe_" + scalaVersion),
+      targetDirectory / (configurationName + "_unpacked-haxe-cache"),
       inStyle = FilesInfo.lastModified,
       outStyle = FilesInfo.exists) { haxeJars: Set[File] =>
         for {
           haxeJar <- haxeJars
-          output <- IO.unzip(haxeJar, targetDirectory / (configurationName + "_unpacked_haxe") / haxeJar.getName)
+          output <- IO.unzip(haxeJar, targetDirectory / (configurationName + "_unpacked-haxe") / haxeJar.getName)
         } yield output
       }
     val (unpacking, rawIncludes) = depsClasspath.partition { _.data.getPath.endsWith(".jar") }
     val unpacked = unpack(unpacking.map { _.data }(collection.breakOut))
     val directories = (for {
       haxeJar <- unpacking
-    } yield targetDirectory / (configurationName + "_unpacked_haxe") / haxeJar.data.getName) ++ rawIncludes.map(_.data)
+    } yield targetDirectory / (configurationName + "_unpacked-haxe") / haxeJar.data.getName) ++ rawIncludes.map(_.data)
     val dependSources = (for {
       dep <- directories
       if dep.exists
