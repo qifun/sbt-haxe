@@ -26,6 +26,9 @@ trait HaxeConfigurations {
   
   final lazy val HaxeJava = config("haxe-java") extend Haxe
   final lazy val TestHaxeJava = config("test-haxe-java") extend HaxeJava
+
+  final lazy val HaxeJavascript = config("haxe-javascript") extend Haxe
+  final lazy val TestHaxeJavascript = config("test-haxe-javascript") extend HaxeJavascript
   
   final lazy val CSharp = config("csharp")
   final lazy val TestCSharp = config("test-csharp") extend CSharp
