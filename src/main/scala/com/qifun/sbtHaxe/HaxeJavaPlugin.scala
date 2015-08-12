@@ -43,6 +43,7 @@ final object HaxeJavaPlugin extends AutoPlugin {
         haxeXmls in Test ++= (haxeXml in Test).value,
         haxePlatformName in Compile := "java",
         haxeOutputPath in Compile := None,
+        haxeOutputExtension in Compile := None,
         haxeOptions in Compile ++= Seq("-D", "no-compilation"),
         doxRegex in Compile := SbtHaxe.buildDoxRegex((sourceDirectories in HaxeJava).value),
         doxRegex in Test := SbtHaxe.buildDoxRegex((sourceDirectories in TestHaxeJava).value),

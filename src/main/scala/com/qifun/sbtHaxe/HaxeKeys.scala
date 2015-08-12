@@ -28,6 +28,7 @@ trait HaxeKeys {
   final val haxePlatformName = SettingKey[String]("haxe-platform-name", "The name of the haxe platform")
   final val haxe = TaskKey[Seq[File]]("haxe", "Convert Haxe source code to target source code.")
   final val haxeOutputPath = SettingKey[Option[File]]("haxe-output-path", "The path where the Haxe code will be compiled to.")
+  final val haxeOutputExtension = SettingKey[Option[String]]("haxe-output-extension", "The file extension that the Haxe code will compile to.")
   
   final val haxeXmls = TaskKey[Seq[File]]("haxe-xmls", "Generate Haxe xmls.")
   final val doxRegex = TaskKey[Seq[String]]("dox-regex", "The Regex that used to generate Haxe documentation.")

@@ -50,6 +50,8 @@ final object HaxeCSharpPlugin extends AutoPlugin {
         haxePlatformName in TestCSharp := "cs",
         haxeOutputPath in CSharp := Some((target in haxe in CSharp).value),
         haxeOutputPath in TestCSharp := Some((target in haxe in CSharp).value),
+        haxeOutputExtension in CSharp := None,
+        haxeOutputExtension in TestCSharp := None,
         doxRegex in Compile := SbtHaxe.buildDoxRegex((sourceDirectories in HaxeCSharp).value),
         doxRegex in Test := SbtHaxe.buildDoxRegex((sourceDirectories in TestHaxeCSharp).value),
         ivyConfigurations += Haxe,

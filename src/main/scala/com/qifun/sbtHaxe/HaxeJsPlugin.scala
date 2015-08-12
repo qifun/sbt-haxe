@@ -28,6 +28,8 @@ object HaxeJsPlugin extends AutoPlugin {
         haxePlatformName in TestJs := "js",
         haxeOutputPath in Js := Some((target in haxe in Js).value),
         haxeOutputPath in TestJs := Some((target in haxe in Js).value),
+        haxeOutputExtension in Js := Some(".js"),
+        haxeOutputExtension in TestJs := Some(".js"),
         doxRegex in Compile := SbtHaxe.buildDoxRegex((sourceDirectories in HaxeJs).value),
         doxRegex in Test := SbtHaxe.buildDoxRegex((sourceDirectories in TestHaxeJs).value),
         ivyConfigurations += Haxe,
