@@ -56,7 +56,7 @@ final object SbtHaxe {
                 Seq[String](
                   (haxeCommand in injectConfiguration).value) ++
                   (for (sourcePath <- (sourceDirectories in haxeConfiguration).value) yield {
-                    Seq("-cp", sourcePath.getPath.toString)
+                    Seq("-cp", sourcePath.getPath)
                   }).flatten ++
                   projectPathFlags(
                     haxeStreams,
@@ -71,7 +71,7 @@ final object SbtHaxe {
                       Seq("-java-lib", path.data.toString)
                     }).flatten ++
                     Seq("-" + platformName,
-                      (haxeOutputPath in injectConfiguration).value.getOrElse(temporaryDirectory).getPath + (haxeOutputExtension in injectConfiguration).value.getOrElse("")) ++
+                      (haxeOutputPath in injectConfiguration).value.getOrElse(temporaryDirectory).getPath) ++
               (haxeOptions in injectConfiguration in haxe).value ++
                 haxeModules(in, (sourceDirectories in haxeConfiguration).value)
               (streams in haxeConfiguration).value.log.info(processBuilder.mkString("\"", "\" \"", "\""))
