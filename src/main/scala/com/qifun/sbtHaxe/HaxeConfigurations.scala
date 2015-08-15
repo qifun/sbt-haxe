@@ -38,6 +38,12 @@ trait HaxeConfigurations {
 
   final lazy val HaxeJs = config("haxe-js") extend Haxe
   final lazy val TestHaxeJs = config("test-haxe-js") extend HaxeJs
+
+  final lazy val Php = config("php")
+  final lazy val TestPhp = config("test-php") extend Php
+
+  final lazy val HaxePhp = config("haxe-php") extend Haxe
+  final lazy val TestHaxePhp = config("test-haxe-php") extend HaxePhp
 }
 
 final object HaxeConfigurations extends HaxeConfigurations
