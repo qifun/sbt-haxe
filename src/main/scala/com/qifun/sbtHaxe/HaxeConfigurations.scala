@@ -56,6 +56,12 @@ trait HaxeConfigurations {
 
   final lazy val HaxePython = config("haxe-python") extend Haxe
   final lazy val TestHaxePython = config("test-haxe-python") extend HaxePython
+
+  final lazy val Neko = config("neko")
+  final lazy val TestNeko = config("test-neko")
+
+  final lazy val HaxeNeko = config("haxe-neko") extend Haxe
+  final lazy val TestHaxeNeko = config("test-haxe-neko") extend HaxeNeko
 }
 
 final object HaxeConfigurations extends HaxeConfigurations
