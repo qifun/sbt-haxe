@@ -10,7 +10,7 @@
 
 Add the following line to your `project/plugins.sbt`:
 
-    addSbtPlugin("com.qifun" % "sbt-haxe" % "1.3.0")
+    addSbtPlugin("com.qifun" % "sbt-haxe" % "1.4.0")
 
 ### Step 2: Put your Haxe sources at `src/haxe/yourPackage/YourHaxeClass.hx`
 
