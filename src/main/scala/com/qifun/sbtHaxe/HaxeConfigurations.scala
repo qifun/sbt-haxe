@@ -66,8 +66,14 @@ trait HaxeConfigurations {
   final lazy val Flash = config("flash")
   final lazy val TestFlash = config("test-flash") extend Flash
 
-  final lazy val HaxeFlash = config("haxe-flash")
+  final lazy val HaxeFlash = config("haxe-flash") extend Haxe
   final lazy val TestHaxeFlash = config("test-haxe-flash") extend HaxeFlash
+
+  final lazy val As3 = config("as3")
+  final lazy val TestAs3 = config("test-as3") extend As3
+
+  final lazy val HaxeAs3 = config("haxe-as3") extend Haxe
+  final lazy val TestHaxeAs3 = config("test-haxe-as3") extend HaxeAs3
 }
 
 final object HaxeConfigurations extends HaxeConfigurations
