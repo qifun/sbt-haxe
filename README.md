@@ -41,8 +41,7 @@ YourHaxeClass.hx:7: Hello, World!
 ```
 
 ## Targets supported
-Currently `sbt-haxe` supports all [targets that haxe supported](http://haxe.org/manual/target-details.html) and all of them are disabled by default except `java`, so if you want to compile to specific target other than `java`,
-you need to enable it manually in `build.sbt`.
+Currently `sbt-haxe` supports all [targets that haxe supported](http://haxe.org/manual/target-details.html) and all of them are disabled by default except `java`, so if you want to compile to specific target other than `java`, you need to enable it manually in `build.sbt`.
 
 - JavaScript `enablePlugins(HaxeJsPlugin)`
 - PHP `enablePlugins(HaxePhpPlugin)`
