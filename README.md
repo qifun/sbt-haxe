@@ -10,7 +10,7 @@
 
 Add the following line to your `project/plugins.sbt`:
 
-    addSbtPlugin("com.qifun" % "sbt-haxe" % "1.3.0")
+    addSbtPlugin("com.qifun" % "sbt-haxe" % "1.4.0")
 
 ### Step 2: Put your Haxe sources at `src/haxe/yourPackage/YourHaxeClass.hx`
 
@@ -39,6 +39,20 @@ $ sbt run
 YourHaxeClass.hx:7: Hello, World!
 [success] Total time: 1 s, completed 2014-7-25 10:00:23
 ```
+
+## Targets supported
+Currently `sbt-haxe` supports all [targets that haxe supported](http://haxe.org/manual/target-details.html) and all of them are disabled by default except `java`, so if you want to compile to specific target other than `java`, you need to enable it manually in `build.sbt`.
+
+And here's a [sbt-haxe-sample](https://github.com/new-cbs/sbt-haxe-sample) project to show how to use them.
+
+- JavaScript `enablePlugins(HaxeJsPlugin)`
+- PHP `enablePlugins(HaxePhpPlugin)`
+- Neko `enablePlugins(HaxeNekoPlugin)`
+- C# `enablePlugins(HaxeCSharpPlugin)`
+- Python `enablePlugins(HaxePythonPlugin)`
+- C++ `enablePlugins(HaxeCppPlugin)`
+- Flash `enablePlugins(HaxeFlashPlugin)`
+- Action Script 3 `enablePlugins(HaxeAs3Plugin)`
 
 ## Tasks and settings
 
