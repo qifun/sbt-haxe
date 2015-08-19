@@ -6,8 +6,6 @@ organization := "com.qifun"
 
 releaseUseGlobalVersion := false
 
-releaseCrossBuild := true
-
 scalacOptions += "-deprecation"
 
 scalacOptions += "-feature"
