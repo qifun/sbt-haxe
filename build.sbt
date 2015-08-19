@@ -18,6 +18,22 @@ startYear := Some(2014)
 
 licenses := Seq("Apache License, Version 2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.html"))
 
+import ReleaseTransformations._
+releaseProcess := Seq[ReleaseStep](
+  checkSnapshotDependencies,
+  inquireVersions,
+  runClean,
+  runTest,
+  setReleaseVersion,
+  commitReleaseVersion,
+  tagRelease,
+  publishArtifacts,
+  setNextVersion,
+  commitNextVersion,
+  releaseStepCommand("sonatypeRelease"),
+  pushChanges
+)
+
 publishTo <<= (isSnapshot) { isSnapshot: Boolean =>
   if (isSnapshot)
     Some("snapshots" at "https://oss.sonatype.org/content/repositories/snapshots")
