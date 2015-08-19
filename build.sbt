@@ -4,11 +4,13 @@ name := "sbt-haxe"
 
 organization := "com.qifun"
 
+releaseUseGlobalVersion := false
+
+releaseCrossBuild := true
+
 scalacOptions += "-deprecation"
 
 scalacOptions += "-feature"
-
-version := "1.4.1-SNAPSHOT"
 
 description := "A Sbt plugin used to compile Haxe sources in Java/Scala projects."
 
