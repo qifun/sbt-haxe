@@ -18,6 +18,8 @@ startYear := Some(2014)
 
 licenses := Seq("Apache License, Version 2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.html"))
 
+releasePublishArtifactsAction := PgpKeys.publishSigned.value
+
 import ReleaseTransformations._
 releaseProcess := Seq[ReleaseStep](
   checkSnapshotDependencies,
