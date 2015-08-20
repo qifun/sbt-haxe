@@ -52,7 +52,7 @@ And here's a [sbt-haxe-sample](https://github.com/new-cbs/sbt-haxe-sample) proje
 - Python `enablePlugins(HaxePythonPlugin)`
 - C++ `enablePlugins(HaxeCppPlugin)`
 - Flash `enablePlugins(HaxeFlashPlugin)`
-- Action Script 3 `enablePlugins(HaxeAs3Plugin)`
+- ActionScript 3 `enablePlugins(HaxeAs3Plugin)`
 
 ## Tasks and settings
 
