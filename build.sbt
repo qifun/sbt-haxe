@@ -4,11 +4,11 @@ name := "sbt-haxe"
 
 organization := "com.qifun"
 
+releaseUseGlobalVersion := false
+
 scalacOptions += "-deprecation"
 
 scalacOptions += "-feature"
-
-version := "1.4.1-SNAPSHOT"
 
 description := "A Sbt plugin used to compile Haxe sources in Java/Scala projects."
 
@@ -17,6 +17,24 @@ homepage := Some(url("https://github.com/qifun/sbt-haxe"))
 startYear := Some(2014)
 
 licenses := Seq("Apache License, Version 2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.html"))
+
+releasePublishArtifactsAction := PgpKeys.publishSigned.value
+
+import ReleaseTransformations._
+releaseProcess := Seq[ReleaseStep](
+  checkSnapshotDependencies,
+  inquireVersions,
+  runClean,
+  runTest,
+  setReleaseVersion,
+  commitReleaseVersion,
+  tagRelease,
+  publishArtifacts,
+  setNextVersion,
+  commitNextVersion,
+  releaseStepCommand("sonatypeRelease"),
+  pushChanges
+)
 
 publishTo <<= (isSnapshot) { isSnapshot: Boolean =>
   if (isSnapshot)

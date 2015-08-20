@@ -45,7 +45,7 @@ final object SbtHaxe {
 
       val cachedTranfer =
         FileFunction.cached(
-          target / ("haxe-cache"),
+          target / (injectConfiguration.name + "_haxe-cache"),
           inStyle = FilesInfo.lastModified,
           outStyle = FilesInfo.exists) { (in: Set[File]) =>
             IO.withTemporaryDirectory { temporaryDirectory =>
@@ -133,7 +133,7 @@ final object SbtHaxe {
 
       val cachedTranfer =
         FileFunction.cached(
-          target / ("dox-cache"),
+          target / (injectConfiguration.name + "_dox-cache"),
           inStyle = FilesInfo.lastModified,
           outStyle = FilesInfo.exists) { (in: Set[File]) =>
             (streams in haxeConfiguration).value.log.info("Generating haxe xml document...")
