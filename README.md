@@ -59,12 +59,9 @@ And here's a [sbt-haxe-sample](https://github.com/new-cbs/sbt-haxe-sample) proje
 `sbt-haxe` provides following tasks and settings:
 
  * haxe
- * dox
- * haxeCommand
- * haxelibCommand
- * doxPlatforms
+ * haxe:doc
 
-See [src/main/scala/com/qifun/sbtHaxe/HaxePlugin.scala](https://bitbucket.org/qforce/sbt-haxe/src/master/src/main/scala/com/qifun/sbtHaxe/HaxePlugin.scala#cl-34) for more information.
+See [src/main/scala/com/qifun/sbtHaxe/HaxePlugin.scala](https://github.com/Atry/sbt-haxe/blob/master/src/main/scala/com/qifun/sbtHaxe/HaxeKeys.scala) for more information.
 
 ## Dependencies
 
