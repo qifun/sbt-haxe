@@ -26,6 +26,9 @@ import sbt._
  * A Plugin used to compile Haxe sources to PHP sources.
  */
 object HaxePhpPlugin extends AutoPlugin {
+
+  override final def requires = BaseHaxePlugin
+
   override final lazy val projectSettings: Seq[Setting[_]] = {
     sbt.addArtifact(artifact in packageBin in HaxePhp, packageBin in HaxePhp) ++
       inConfig(Php)(SbtHaxe.baseHaxeSettings) ++

@@ -27,7 +27,9 @@ import sbt.AutoPlugin
  * A Plugin used to compile Haxe sources to Java sources.
  */
 final object HaxeJavaPlugin extends AutoPlugin {
+
   override final def requires = BaseHaxePlugin
+
   override final def trigger = allRequirements
 
   override final lazy val projectSettings: Seq[Setting[_]] =
