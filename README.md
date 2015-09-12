@@ -41,7 +41,7 @@ YourHaxeClass.hx:7: Hello, World!
 ```
 
 ## Targets supported
-Currently `sbt-haxe` supports all [targets that haxe supported](http://haxe.org/manual/target-details.html) and all of them are disabled by default except `java`, so if you want to compile to specific target other than `java`, you need to enable it manually in `build.sbt`.
+Currently `sbt-haxe` supports all [targets that haxe supported](http://haxe.org/manual/target-details.html), but all of them are disabled by default except `java`. If you want to compile to specific target other than `java`, you need to enable it manually in `build.sbt`.
 
 And here's a [sbt-haxe-sample](https://github.com/new-cbs/sbt-haxe-sample) project to show how to use them.
 
@@ -59,12 +59,9 @@ And here's a [sbt-haxe-sample](https://github.com/new-cbs/sbt-haxe-sample) proje
 `sbt-haxe` provides following tasks and settings:
 
  * haxe
- * dox
- * haxeCommand
- * haxelibCommand
- * doxPlatforms
+ * haxe:doc
 
-See [src/main/scala/com/qifun/sbtHaxe/HaxePlugin.scala](https://bitbucket.org/qforce/sbt-haxe/src/master/src/main/scala/com/qifun/sbtHaxe/HaxePlugin.scala#cl-34) for more information.
+See [src/main/scala/com/qifun/sbtHaxe/HaxePlugin.scala](https://github.com/Atry/sbt-haxe/blob/master/src/main/scala/com/qifun/sbtHaxe/HaxeKeys.scala) for more information.
 
 ## Dependencies
 

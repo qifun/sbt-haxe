@@ -23,7 +23,7 @@ import Keys._
 trait HaxeConfigurations {
   final lazy val Haxe = config("haxe")
   final lazy val TestHaxe = config("test-haxe") extend Haxe
-  
+
   final lazy val HaxeJava = config("haxe-java") extend Haxe
   final lazy val TestHaxeJava = config("test-haxe-java") extend HaxeJava
 
@@ -74,6 +74,51 @@ trait HaxeConfigurations {
 
   final lazy val HaxeAs3 = config("haxe-as3") extend Haxe
   final lazy val TestHaxeAs3 = config("test-haxe-as3") extend HaxeAs3
+
+  final lazy val AllTargetConfigurations = Seq(
+    Compile,
+    CSharp,
+    Cpp,
+    Js,
+    Php,
+    Python,
+    Neko,
+    Flash,
+    As3)
+
+  final lazy val AllTestTargetConfigurations = Seq(
+    Test,
+    TestCSharp,
+    TestCpp,
+    TestJs,
+    TestPhp,
+    TestPython,
+    TestNeko,
+    TestFlash,
+    TestAs3)
+
+  final lazy val AllHaxeConfigurations = Seq(
+    HaxeJava,
+    HaxeCSharp,
+    HaxeCpp,
+    HaxeJs,
+    HaxePhp,
+    HaxePython,
+    HaxeNeko,
+    HaxeFlash,
+    HaxeAs3)
+
+  final lazy val AllTestHaxeConfigurations = Seq(
+    TestHaxeJava,
+    TestHaxeCSharp,
+    TestHaxeCpp,
+    TestHaxeJs,
+    TestHaxePhp,
+    TestHaxePython,
+    TestHaxeNeko,
+    TestHaxeFlash,
+    TestHaxeAs3)
+
 }
 
 final object HaxeConfigurations extends HaxeConfigurations
