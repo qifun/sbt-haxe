@@ -22,6 +22,8 @@ import Keys._
 import HaxeKeys._
 import HaxeConfigurations._
 
+import scala.util.parsing.json.JSONFormat
+
 final object SbtHaxe {
 
   private lazy val HaxeFileRegex = """^(.*)\.hx$""".r
@@ -74,7 +76,7 @@ final object SbtHaxe {
                       (haxeOutputPath in injectConfiguration).value.getOrElse(temporaryDirectory).getPath) ++
               (haxeOptions in injectConfiguration in haxe).value ++
                 haxeModules(in, (sourceDirectories in haxeConfiguration).value)
-              (streams in haxeConfiguration).value.log.info(processBuilder.mkString("\"", "\" \"", "\""))
+              (streams in haxeConfiguration).value.log.info(processBuilder.map(JSONFormat.quoteString).mkString("\"", "\" \"", "\""))
               val logger = (streams in haxeConfiguration).value.log
               IO.delete(haxeOutput)
               class HaxeProcessLogger extends ProcessLogger {
