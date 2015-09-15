@@ -26,6 +26,9 @@ import sbt._
  * A Plugin used to compile Haxe sources to Neko binary.
  */
 object HaxeNekoPlugin extends AutoPlugin {
+
+  override final def requires = BaseHaxePlugin
+
   override final lazy val projectSettings: Seq[Setting[_]] = {
     sbt.addArtifact(artifact in packageBin in HaxeNeko, packageBin in HaxeNeko) ++
       inConfig(Neko)(SbtHaxe.baseHaxeSettings) ++

@@ -26,6 +26,9 @@ import sbt._
  * A Plugin used to compile Haxe sources to JavaScript sources.
  */
 object HaxeJsPlugin extends AutoPlugin {
+
+  override final def requires = BaseHaxePlugin
+
   override final lazy val projectSettings: Seq[Setting[_]] = {
     sbt.addArtifact(artifact in packageBin in HaxeJs, packageBin in HaxeJs) ++
       inConfig(Js)(SbtHaxe.baseHaxeSettings) ++
